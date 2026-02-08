@@ -5,8 +5,8 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
-import com.thc.back14th.domain.User;
-import com.thc.back14th.repository.UserRepository;
+import org.example.taesejeanhwan_backend.domain.User;
+import org.example.taesejeanhwan_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,31 +25,19 @@ public class LoginService {
     public User loginWithGoogleIdToken(String idTokenString) {
         GoogleIdToken.Payload payload = verify(idTokenString);
 
-        // 필요한 정보 뽑기
-        String sub = payload.getSubject();   // google 고유 ID
-        String email = payload.getEmail();
-        String name = (String) payload.get("name");
+        String sub = payload.getSubject();
+        String nickName = (String) payload.get("nickname");
 
         //  구글 sub 기준으로 기존 유저 찾기, 예전에 로그인 했던 사람이면 googlesub이 저장되있음.
-        //
         User user = userRepository.findByGoogleSub(sub).orElse(null);
         if (user != null) {
-            user.updateOAuthProfile(name);
-            return userRepository.save(user);
-        }
-
-        //  같은 이메일의 기존 로컬 회원이 있으면 → 구글 계정 연동
-        user = userRepository.findByEmail(email).orElse(null);
-        if (user != null) {
-            user.connectGoogle(sub);
-            user.updateOAuthProfile(name);
+            user.updateOAuthProfile(nickName);
             return userRepository.save(user);
         }
 
         // 완전 신규 회원
         User newUser = User.builder()
-                .name(name != null ? name : "google-user")
-                .email(email)
+                .nickname(nickName != null ? nickName : "google-user")
                 .googleSub(sub)
                 .build();
 
