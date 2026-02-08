@@ -1,0 +1,17 @@
+package org.example.taesejeanhwan_backend.dto.feed.response;
+
+import lombok.Builder;
+import lombok.Data;
+
+import java.util.List;
+
+@Data
+@Builder
+public class FeedResponseGetContent {
+    private String title;
+    private String poster;
+    private Float rating;
+    private String comment;
+    private List<Long> genre_id;
+    private String create_time;
+}
