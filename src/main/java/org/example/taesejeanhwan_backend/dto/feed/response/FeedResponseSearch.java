@@ -9,5 +9,5 @@ import java.util.List;
 @Builder
 public class FeedResponseSearch {
     private String result;
-    private List<FeedResponseUserAndContentGetContent> results;
+    private List<FeedResponseSearchContent> results;
 }
