@@ -7,12 +7,9 @@ import java.util.List;
 
 @Data
 @Builder
-public class FeedResponseGetContent {
+public class FeedResponseSearchContent {
     private String title;
     private String poster;
-    private String overview;
-    private Float rating;
-    private String comment;
+    private int year;
     private List<Long> genre_id;
-    private String create_time;
 }

@@ -10,5 +10,4 @@ import java.util.List;
 public class FeedResponseUserAndContentGetContent {
     private String title;
     private String poster;
-    private List<Long> genre_id;
 }
