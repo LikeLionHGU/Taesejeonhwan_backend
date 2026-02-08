@@ -1,4 +1,4 @@
 package org.example.taesejeanhwan_backend.controller;
 
-public class AuthController {
+public class LoginController {
 }
