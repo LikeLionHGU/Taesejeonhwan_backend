@@ -40,4 +40,11 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<UserGenre> userGenres = new ArrayList<>();
 
+    public void updateOAuthProfile(String name) {
+        this.name = name;
+    }
+
+    public void connectGoogle(String googleSub) {
+        this.googleSub = googleSub;
+    }
 }
