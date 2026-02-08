@@ -1,7 +1,10 @@
-import com.thc.back14th.dto.user.UserCreateRequest;
-import com.thc.back14th.dto.user.UserResponse;
-import com.thc.back14th.dto.user.UserUpdateRequest;
-import com.thc.back14th.service.UserService;
+package org.example.taesejeanhwan_backend.controller;
+
+
+import org.example.taesejeanhwan_backend.dto.user.UserCreateRequest;
+import org.example.taesejeanhwan_backend.dto.user.UserResponse;
+import org.example.taesejeanhwan_backend.dto.user.UserUpdateRequest;
+import org.example.taesejeanhwan_backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
