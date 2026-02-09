@@ -3,10 +3,9 @@ package org.example.taesejeanhwan_backend.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.dto.user.request.*;
 import org.example.taesejeanhwan_backend.dto.user.response.*;
-import org.example.taesejeanhwan_backend.service.ContentService;
-import org.example.taesejeanhwan_backend.service.FollowService;
-import org.example.taesejeanhwan_backend.service.ProfileImageService;
+
 import org.example.taesejeanhwan_backend.service.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,20 +16,34 @@ import java.util.List;
 public class UserController {
 
     public final UserService userService;
-    public final FollowService followService;
-    public final ContentService contentService;
-    public final ProfileImageService profileImageService;
+//    public final FollowService followService;
+//    public final ContentService contentService;
+//    public final ProfileImageService profileImageService;
 
+
+    @Value("taesae")
+    private String bucket;
+
+    @Value("ap-northeast-2")
+    private String region;
+
+    //s3 이미지 파일 key = 1.png, 2.png ...
+    @Value(".png")
+    private String key;
+
+    //프로필 이미지 설정
     @PostMapping("/profile-img")
     public UserResponseResult setProfileImage(@RequestBody UserRequestSetImage userRequestSetImage) {
         return userService.setProfileImage(userRequestSetImage);
     }
 
+    //닉네임 설정
     @PostMapping("/nickname")
     public UserResponseResult setNickname(@RequestBody UserRequestSetNickname userRequestSetNickname) {
         return userService.setNickname(userRequestSetNickname);
     }
 
+//    //유저 취향 table 생성
     @PostMapping("/onboarding")
     public UserResponseSetPreference setPreference(@RequestBody UserRequestSetPreference userRequestSetPreference) {
         return userService.setPreference(userRequestSetPreference);

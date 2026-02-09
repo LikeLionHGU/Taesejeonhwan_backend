@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,5 +49,8 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<UserGenre> userGenres = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable=false)
+    private ProfileImg profileImg;
 
 }

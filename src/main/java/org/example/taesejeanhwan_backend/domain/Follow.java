@@ -16,7 +16,6 @@ public class Follow{
     private Long id;
     private Long another_user_id;
 
-
     @ManyToOne
     @JoinColumn(nullable=false)
     private User user;
