@@ -1,6 +1,5 @@
 package org.example.taesejeanhwan_backend.domain;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,17 +12,14 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name = "contentGenres")
-public class ContentGenre{
+@Table(name="profileImg")
+public class ProfileImg {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long img_id;
 
-    @ManyToOne
-    @JoinColumn(nullable=false)
-    private Content content;
+    private String img_url;
 
-    @ManyToOne
-    @JoinColumn(nullable=false)
-    private Genre genre;
+    @OneToMany(mappedBy = "profileImg")
+    private List<User> users = new ArrayList<>();
 }
