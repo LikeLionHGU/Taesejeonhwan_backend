@@ -1,6 +1,5 @@
 package org.example.taesejeanhwan_backend.service;
 
-
 import org.example.taesejeanhwan_backend.domain.User;
 import org.example.taesejeanhwan_backend.dto.user.UserCreateRequest;
 import org.example.taesejeanhwan_backend.dto.user.UserResponse;
@@ -14,7 +13,7 @@ import java.util.List;
 
 @Service // 이건 서비스 계층이다!
 @RequiredArgsConstructor // final 필드를 받는 생성자를 자동으로 만들어줌
-// public UserService(UserRepository userRepository) {
+// public org.example.taesejeanhwan_backend.service.UserService(UserRepository userRepository) {
 //    this.userRepository = userRepository;
 //} 이거 자동으로 만들어줌. 결론적으로 new로 안만들어도 된다~
 @Transactional // DB 안전관리. 중간에 실패하면 롤백해서 db 안전하게 유지. C,R에서는 체감 약하지만, Update에서 아주 중요해짐.
@@ -26,11 +25,10 @@ public class UserService {
     public Long create(UserCreateRequest req) {
         if (userRepository.existsByEmail(req.getEmail())) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
-        }//
+        }
 
         User user = User.builder()
                 .nickname(req.getNickname())
-                .email(req.getEmail())
                 .build();
         // 요청 DTO는 통신용 상자. DB에 넣으려면 Entity(User)가 필요. 그래서 DTO 값을 꺼내서 Entity를 만든다.
         return userRepository.save(user).getId(); // 저장 + id 반환. DB가 id를 만들어

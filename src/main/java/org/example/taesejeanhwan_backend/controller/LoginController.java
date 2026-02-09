@@ -32,7 +32,7 @@ public class LoginController {
         session.setAttribute(SESSION_USER_ID, user.getId());
 
         return ResponseEntity.ok(
-                new LoginResponse(user.getId(), user.getEmail(), user.getName())
+                new LoginResponse(user.getId(), user.getNickname())
         );
     }
 
