@@ -1,10 +1,9 @@
 package org.example.taesejeanhwan_backend.controller;
 
-
 import org.example.taesejeanhwan_backend.domain.User;
-
 import org.example.taesejeanhwan_backend.dto.login.LoginRequest;
 import org.example.taesejeanhwan_backend.dto.login.LoginResponse;
+import org.example.taesejeanhwan_backend.dto.login.LoginResult;
 import org.example.taesejeanhwan_backend.dto.login.LogoutResponse;
 import org.example.taesejeanhwan_backend.service.LoginService;
 import jakarta.servlet.http.HttpSession;
@@ -26,26 +25,27 @@ public class LoginController {
             @Valid @RequestBody LoginRequest request,
             HttpSession session
     ) {
-        User user = loginService.loginWithGoogleIdToken(request.getIdToken());
-        //구글이 준 idToken이 진짜인지 확인.
+        // user + isNewUser를 같이 받음
+        LoginResult result = loginService.loginWithGoogleIdToken(request.getIdToken());
+        User user = result.getUser();
 
-        //  세션에 로그인 정보 저장
+        // 세션에 로그인 정보 저장
         session.setAttribute(SESSION_USER_ID, user.getId());
 
         return ResponseEntity.ok(
-                new LoginResponse("SUCCESS",
+                new LoginResponse(
+                        "SUCCESS",
                         user.getId(),
-                        false,
-                        user.getNickname())
+                        result.is_new_user(),
+                        user.getNickname()
+                )
         );
     }
 
-    //로그아웃
+    // 로그아웃
     @PostMapping("/logout")
     public ResponseEntity<LogoutResponse> logout(HttpSession session) {
-        session.invalidate();//세션 자체를 폐기해버림
-        return ResponseEntity.ok(
-                new LogoutResponse("SUCCESS")
-        );
+        session.invalidate(); // 세션 자체 폐기
+        return ResponseEntity.ok(new LogoutResponse("SUCCESS"));
     }
 }
