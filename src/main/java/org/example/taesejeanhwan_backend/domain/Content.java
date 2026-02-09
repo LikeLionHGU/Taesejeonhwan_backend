@@ -21,7 +21,7 @@ public class Content {
     private String overview;
     private String title;
     private String poster;
-    private Long year;
+    private int year;
 
 
 

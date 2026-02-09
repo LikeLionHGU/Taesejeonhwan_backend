@@ -17,6 +17,7 @@ public class UserWish {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private boolean wished;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
