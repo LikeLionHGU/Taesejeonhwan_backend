@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class FeedResponseGetUserContent {
+    private Long content_id;
     private String title;
     private String poster;
     private Float rating;

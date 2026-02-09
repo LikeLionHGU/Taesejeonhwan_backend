@@ -8,4 +8,5 @@ import lombok.Data;
 public class FeedResponseGetWish {
     private String title;
     private String poster;
+    private Long content_id;
 }

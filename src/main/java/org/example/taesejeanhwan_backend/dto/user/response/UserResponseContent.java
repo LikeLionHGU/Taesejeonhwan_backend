@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class UserResponseContent {
+    private Long content_id;
     private String title;
     private String poster;
 }

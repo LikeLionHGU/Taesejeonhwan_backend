@@ -8,8 +8,8 @@ import java.util.List;
 @Data
 @Builder
 public class FeedResponseSearchContent {
+    private Long content_id;
     private String title;
     private String poster;
     private int year;
-    private List<Long> genre_id;
 }
