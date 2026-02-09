@@ -18,8 +18,6 @@ public class ContentGenre{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long content_id;
-    private Long genre_id;
 
     @ManyToOne
     @JoinColumn(nullable=false)

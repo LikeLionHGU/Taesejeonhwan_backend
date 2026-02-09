@@ -22,7 +22,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Pattern(regexp = "^[a-zA-Z0-9@]+$", message = "닉네임은 영어와 숫자만 입력 가능합니다.")
+    @Pattern(regexp = "^[a-zA-Z0-9@]+$")
     @Size(min = 2, max = 10)
     @Column(length = 10, nullable = false)
     private String nickname;
@@ -50,8 +50,5 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<UserGenre> userGenres = new ArrayList<>();
 
-    public void updateOAuthProfile(String nickname) {
-        this.nickname = nickname;
-    }
 
 }
