@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,8 +22,16 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 50)
+    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "닉네임은 영어와 숫자만 입력 가능합니다.")
+    @Size(min = 2, max = 10)
+    @Column(length = 10, nullable = false)
     private String nickname;
+
+    @Column(nullable = false, length = 50)
+    private String googleSub;
+
+    @Column(nullable = false, unique = true, length = 50)
+    private String email;
 
     private String profile_img;
 
@@ -40,11 +50,8 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<UserGenre> userGenres = new ArrayList<>();
 
-    public void updateOAuthProfile(String name) {
-        this.name = name;
+    public void updateOAuthProfile(String nickname) {
+        this.nickname = nickname;
     }
 
-    public void connectGoogle(String googleSub) {
-        this.googleSub = googleSub;
-    }
 }
