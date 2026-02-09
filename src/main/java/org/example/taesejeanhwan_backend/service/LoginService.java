@@ -25,19 +25,21 @@ public class LoginService {
     public User loginWithGoogleIdToken(String idTokenString) {
         GoogleIdToken.Payload payload = verify(idTokenString);
 
+        String email = payload.getEmail();
         String sub = payload.getSubject();
-        String nickName = (String) payload.get("nickname");
+        String nickname = (String) payload.get("nickname");
 
         //  구글 sub 기준으로 기존 유저 찾기, 예전에 로그인 했던 사람이면 googlesub이 저장되있음.
         User user = userRepository.findByGoogleSub(sub).orElse(null);
         if (user != null) {
-            user.updateOAuthProfile(nickName);
+            user.updateOAuthProfile(nickname);
             return userRepository.save(user);
         }
 
         // 완전 신규 회원
         User newUser = User.builder()
-                .nickname(nickName != null ? nickName : "google-user")
+                .nickname(null)
+                .email(email)
                 .googleSub(sub)
                 .build();
 

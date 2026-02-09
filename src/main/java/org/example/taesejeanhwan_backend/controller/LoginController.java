@@ -5,6 +5,7 @@ import org.example.taesejeanhwan_backend.domain.User;
 
 import org.example.taesejeanhwan_backend.dto.login.LoginRequest;
 import org.example.taesejeanhwan_backend.dto.login.LoginResponse;
+import org.example.taesejeanhwan_backend.dto.login.LogoutResponse;
 import org.example.taesejeanhwan_backend.service.LoginService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -32,24 +33,19 @@ public class LoginController {
         session.setAttribute(SESSION_USER_ID, user.getId());
 
         return ResponseEntity.ok(
-                new LoginResponse(user.getId(), user.getNickname())
+                new LoginResponse("SUCCESS",
+                        user.getId(),
+                        false,
+                        user.getNickname())
         );
-    }
-
-    //현재 로그인 상태
-    @GetMapping("/me")
-    public ResponseEntity<?> me(HttpSession session) {
-        Object userId = session.getAttribute(SESSION_USER_ID);
-        if (userId == null) {
-            return ResponseEntity.status(401).body("NOT_LOGGED_IN");
-        }
-        return ResponseEntity.ok(userId);
     }
 
     //로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpSession session) {
+    public ResponseEntity<LogoutResponse> logout(HttpSession session) {
         session.invalidate();//세션 자체를 폐기해버림
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(
+                new LogoutResponse("SUCCESS")
+        );
     }
 }

@@ -30,6 +30,9 @@ public class User {
     @Column(nullable = false, length = 50)
     private String googleSub;
 
+    @Column(nullable = false, unique = true, length = 50)
+    private String email;
+
     private String profile_img;
 
     @OneToMany(mappedBy = "user")
