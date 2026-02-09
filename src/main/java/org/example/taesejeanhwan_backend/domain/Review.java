@@ -19,7 +19,7 @@ public class Review {
 
     private float rating;
 
-    @Column(length = 500)
+    @Column(length = 100)
     private String comment;
 
     private String create_time;
