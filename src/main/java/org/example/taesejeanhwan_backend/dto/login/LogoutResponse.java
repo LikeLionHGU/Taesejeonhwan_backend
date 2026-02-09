@@ -5,10 +5,6 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class LoginResponse {
+public class LogoutResponse {
     private String result;
-    private Long user_id;
-    private boolean is_new_user;
-    private String nickname;
-
 }
