@@ -11,6 +11,6 @@ public class FeedResponseUserAndContentGetUser {
     private Long user_id;
     private String nickname;
     private String profile_img;
-    private List<Long> genre_keyword;
+    private List<String> genre_keyword;
     private List<FeedResponseUserAndContentGetContent> content;
 }

@@ -8,6 +8,7 @@ import java.util.List;
 @Data
 @Builder
 public class FeedResponseUserAndContentGetContent {
+    private Long content_id;
     private String title;
     private String poster;
 }

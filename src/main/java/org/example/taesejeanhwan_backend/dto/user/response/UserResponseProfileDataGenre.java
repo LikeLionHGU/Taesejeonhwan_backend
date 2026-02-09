@@ -4,5 +4,5 @@ import lombok.Data;
 
 @Data
 public class UserResponseProfileDataGenre {
-    private Long keyword;
+    private String keyword;
 }

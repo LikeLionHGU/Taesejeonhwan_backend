@@ -13,6 +13,6 @@ public class FeedResponseGetContent {
     private String overview;
     private Float rating;
     private String comment;
-    private List<Long> genre_id;
+    private List<String> genre_id;
     private String create_time;
 }

@@ -5,8 +5,6 @@ import lombok.Data;
 
 @Data
 @Builder
-public class FeedResponseGetReview {
-    private Long user_id;
-    private String comment;
-    private Float rating;
+public class FeedResponseGetGenre {
+    private String genre_name;
 }

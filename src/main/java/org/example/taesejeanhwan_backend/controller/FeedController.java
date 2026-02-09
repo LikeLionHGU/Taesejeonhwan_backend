@@ -17,6 +17,8 @@ public class FeedController {
     public final WishService wishService;
     public final ContentService contentService;
     public final UserContentService userContentService;
+    public final GenreService genreService;
+    public final UserGenreService userGenreService;
 
     @PostMapping("/reviews")
     public FeedResponseResult addReview(@RequestBody FeedRequestAddReview feedAddReview) {
@@ -53,9 +55,14 @@ public class FeedController {
         return userContentService.getUserAndContent(mode);
     }
 
-    @GetMapping("/{user_id}/search/{keyword}")
-    public FeedResponseSearch search(@PathVariable Long user_id, String keyword) {
-        return contentService.search(user_id, keyword);
+    @GetMapping("/search/{keyword}")
+    public FeedResponseSearch search(@PathVariable String keyword) {
+        return contentService.search(keyword);
+    }
+
+    @GetMapping("/genre")
+    public List<FeedResponseGetGenre> getAllGenres() {
+        return genreService.getAllGenres();
     }
 
     @PutMapping("/reviews")
@@ -63,10 +70,16 @@ public class FeedController {
         return reviewService.updateReview(feedRequestReviewUpdate);
     }
 
-    @DeleteMapping("/reviews")
-    public FeedResponseResult deleteReview(@RequestBody FeedRequestReviewDelete feedRequestReviewDelete) {
-        return reviewService.deleteReview(feedRequestReviewDelete);
+    @PutMapping("/genre")
+    public FeedResponseResult updateKeyword(@RequestBody FeedRequestUpdateGenre feedRequestUpdateGenre) {
+        return userGenreService.updateKeyword(feedRequestUpdateGenre);
     }
+
+    @DeleteMapping("/wish")
+    public FeedResponseResult deleteWish(@RequestBody FeedRequestDeleteWish feedRequestDeleteWish) {
+        return wishService.deleteWish(feedRequestDeleteWish);
+    }
+
 
 
 }
