@@ -10,7 +10,12 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
-@Table(name = "contents")
+@Table(
+        name = "contents",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"title", "year", "poster"})
+        }
+)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -18,8 +23,10 @@ public class Content {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(columnDefinition = "TEXT")
     private String overview;
     private String title;
+    @Column(length = 500)
     private String poster;
     private int year;
 

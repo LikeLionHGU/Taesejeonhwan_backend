@@ -18,6 +18,7 @@ public class Genre{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(name="genre_name")
     private String genre_name;
 
     @OneToMany(mappedBy = "genre", fetch=FetchType.LAZY,
@@ -29,6 +30,7 @@ public class Genre{
             cascade=CascadeType.ALL,
             orphanRemoval = true)
     private List<ContentGenre> contentGenre = new ArrayList<>();
+    private Integer tmdbId;
 
 
 }

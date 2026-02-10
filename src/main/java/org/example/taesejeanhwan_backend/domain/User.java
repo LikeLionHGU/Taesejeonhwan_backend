@@ -21,8 +21,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Pattern(regexp = "^[a-zA-Z0-9@]+$")
-    @Size(min = 2, max = 10)
+    @Pattern(regexp = "^@?[a-zA-Z0-9]+$")
+    @Size(min = 2, max = 8)
     @Column(length = 10, nullable = false)
     private String nickname;
 
