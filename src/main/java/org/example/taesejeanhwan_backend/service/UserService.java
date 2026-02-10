@@ -1,45 +1,55 @@
 package org.example.taesejeanhwan_backend.service;
 
-import org.example.taesejeanhwan_backend.domain.User;
+import org.example.taesejeanhwan_backend.domain.*;
+import org.example.taesejeanhwan_backend.dto.user.GenreStatDto;
 import org.example.taesejeanhwan_backend.dto.user.request.*;
 import org.example.taesejeanhwan_backend.dto.user.response.*;
-//import org.example.taesejeanhwan_backend.repository.ProfileImgRepository;
-import org.example.taesejeanhwan_backend.repository.UserRepository;
+import org.example.taesejeanhwan_backend.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
 
-//    private final ProfileImgRepository profileImgRepository;
     private final UserRepository userRepository;
+    private final ContentRepository contentRepository;
+    private final ContentGenreRepository contentGenreRepository;
+    private final UserGenreRepository userGenreRepository;
+    private final GenreRepository genreRepository;
+    private final ProfileImgRepository profileImgRepository;
+    private final FollowRepository followRepository;
 
-    //img_url 을 받아와 user_id에 맞는 유저에 url을 저장하고 성공하면 success 응답
     public UserResponseResult setProfileImage(UserRequestSetImage userRequestSetImage) {
-        User user = userRepository.findById(userRequestSetImage.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
-        user.builder()
-                .profile_img(userRequestSetImage.getProfile_img())
-                .build();
-        userRepository.save(user);
+       try {
+           User user = userRepository.findById(userRequestSetImage.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
+           user.builder()
+                   .profile_img(userRequestSetImage.getProfile_img())
+                   .build();
+           userRepository.save(user);
 
-        String resultReturn;
-        if(userRepository.existsByIdAndProfileImg(userRequestSetImage.getUserId(), userRequestSetImage.getProfile_img())) {
-            resultReturn = "success";
-        }
-        else {
-            resultReturn = "fail";
-        }
-        return UserResponseResult.builder()
-                .result(resultReturn)
-                .build();
+           String resultReturn;
+           if(userRepository.existsByIdAndProfileImg(userRequestSetImage.getUserId(), userRequestSetImage.getProfile_img())) {
+               resultReturn = "success";
+           }
+           else {
+               resultReturn = "fail";
+           }
+           return UserResponseResult.builder()
+                   .result(resultReturn)
+                   .build();
+       } catch (Exception e) {
+           return UserResponseResult.builder()
+                   .result("fail")
+                   .build();
+       }
     }
 
-    //닉네임 설정
     public UserResponseResult setNickname(UserRequestSetNickname userRequestSetNickname) {
         User user = userRepository.findById(userRequestSetNickname.getUser_id()).orElseThrow(() -> new RuntimeException("User not found"));
         user.builder()
@@ -59,9 +69,117 @@ public class UserService {
                 .build();
     }
 
-    //10개 content_id로 초기 table 생성
-    public UserResponseSetPreference setPreference(UserRequestSetPreference userRequestSetPreference) {
-        //컨텐츠 아이디를 통해 컨텐츠 장르를 가져와 리스트업
-    };
+    public UserResponseResult setPreference(UserRequestSetPreference userRequestSetPreference) {
+        try {
+            //content_id와 rating map하기
+            Map<Long, Float> ratingMap = userRequestSetPreference.getUser_contents()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            UserRequestSetPreferenceContent::getContent_id,
+                            UserRequestSetPreferenceContent::getRating
+                    ));
+            //content_id모음
+            List<Long> contentIds = new ArrayList<>(ratingMap.keySet());
+            //content_id로 해당하는 ContentGenre 리스트업
+            List<ContentGenre> contentGenres = contentGenreRepository.findAllByContent_IdIn(contentIds);
+            //genre_id와 장릐의 통계(횟수, 별점, 최소 content_id) 매핑하기
+            Map<Long, GenreStatDto> genreStatMap = new HashMap<>();
+            for (ContentGenre cg : contentGenres) {
+                Long genreId = cg.getGenre().getId();
+                Long contentId = cg.getContent().getId();
+                double rating = ratingMap.get(contentId);
 
+                genreStatMap.merge(
+                        genreId,
+                        new GenreStatDto(genreId, 1, rating, contentId),
+                        (oldStat, newStat) -> new GenreStatDto(
+                                genreId,
+                                oldStat.getCount() + 1,
+                                oldStat.getRatingSum() + rating,
+                                Math.min(oldStat.getMinContentId(), contentId)
+                        )
+                );
+            }
+
+            //상위 5개 장르 리스트업
+            List<GenreStatDto> top5Genres = genreStatMap.values().stream()
+                    .sorted(
+                            Comparator
+                                    .comparingLong(GenreStatDto::getCount).reversed()
+                                    .thenComparingDouble(GenreStatDto::getAvgRating).reversed()
+                                    .thenComparingLong(GenreStatDto::getMinContentId)
+                    )
+                    .limit(5)
+                    .toList();
+            userGenreRepository.deleteByUser_Id(userRequestSetPreference.getUser_id());
+
+            //UserGenre 만들기 및 저장
+            List<UserGenre> userGenres = top5Genres.stream()
+                    .map(stat -> UserGenre.builder()
+                            .user(userRepository.getReferenceById(userRequestSetPreference.getUser_id()))
+                            .genre(genreRepository.getReferenceById(stat.getGenreId()))
+                            .build()
+                    )
+                    .toList();
+            userGenreRepository.saveAll(userGenres);
+
+            return UserResponseResult.builder()
+                    .result("success")
+                    .build();
+
+        } catch (Exception e) {
+            return UserResponseResult.builder()
+                    .result("fail")
+                    .build();
+        }
+    }
+
+    public UserResponseCheckNickname checkNickname(UserRequestCheckNickname userRequestCheckNickname) {
+        if(userRepository.existsByNickname(userRequestCheckNickname.getNickname())) {
+            return UserResponseCheckNickname.builder()
+                    .is_available(false)
+                    .build();
+        }
+        return UserResponseCheckNickname.builder()
+                .is_available(true)
+                .build();
+    }
+
+    public List<UserResponseProfileImage> getAllProfileImages() {
+        List<ProfileImg> profileImgs = profileImgRepository.findAll();
+        return profileImgs.stream()
+                .map(UserResponseProfileImage::from)
+                .toList();
+    }
+
+    public UserResponseProfile getProfile(Long user_id) {
+        try {
+            User user = userRepository.findById(user_id).orElseThrow(() -> new RuntimeException("User not found"));
+
+            int followerCount = followRepository.findAllByUser_id(user_id).size();
+            int followingCount = followRepository.findAllByAnother_user_id(user_id).size();
+
+            List<UserResponseProfileGenre> table = userGenreRepository.findByUser_Id(user_id).stream()
+                    .map(UserResponseProfileGenre::from)
+                    .toList();
+
+            UserResponseProfile.builder()
+                    .result("success")
+                    .nickname(user.getNickname())
+                    .profile_img(user.getProfile_img())
+                    .stats(UserResponseProfileDataFollow.builder()
+                            .follower_count(followerCount)
+                            .following_count(followingCount)
+                            .build()
+                    )
+                    .table(table)
+                    .build();
+        } catch (Exception e) {
+            return UserResponseProfile.builder()
+                    .result("success")
+                    .build();
+        }
+
+
+    }
 }

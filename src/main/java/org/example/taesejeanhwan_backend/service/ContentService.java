@@ -1,11 +1,25 @@
-//package org.example.taesejeanhwan_backend.service;
-//
-//import jakarta.transaction.Transactional;
-//import lombok.RequiredArgsConstructor;
-//import org.springframework.stereotype.Service;
-//
-//@Service
-//@RequiredArgsConstructor
-//@Transactional
-//public class ContentService {
-//}
+package org.example.taesejeanhwan_backend.service;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import org.example.taesejeanhwan_backend.domain.Content;
+import org.example.taesejeanhwan_backend.dto.user.response.UserResponseContent;
+import org.example.taesejeanhwan_backend.repository.ContentRepository;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class ContentService {
+
+    private final ContentRepository contentRepository;
+
+    public List<UserResponseContent> getContentsForSelection() {
+        List<Content> contents = contentRepository.findAll();
+        return contents.stream()
+                .map(UserResponseContent::from)
+                .limit(100)
+                .toList();
+    }
+}

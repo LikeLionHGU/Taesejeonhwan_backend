@@ -19,6 +19,7 @@ public class Genre{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String genre_name;
+    private Long tmdb_id;
 
     @OneToMany(mappedBy = "genre", fetch=FetchType.LAZY,
             cascade=CascadeType.ALL,

@@ -14,9 +14,12 @@ public class Follow{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long another_user_id;
 
     @ManyToOne
     @JoinColumn(nullable=false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "another_user_id")
+    private User anotherUser;
 }
