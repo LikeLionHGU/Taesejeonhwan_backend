@@ -5,7 +5,9 @@ import lombok.Data;
 
 @Data
 @Builder
-public class FeedResponseAddWish {
-    private Long user_id;
+public class FeedResponseSearchContentResult {
     private Long content_id;
+    private String title;
+    private String poster;
+    private int year;
 }

@@ -12,7 +12,8 @@ public class FeedResponseGetContent {
     private String poster;
     private String overview;
     private Float rating;
+    private int year;
     private String comment;
-    private List<String> genre_id;
+    private List<String> genre_name;
     private String create_time;
 }

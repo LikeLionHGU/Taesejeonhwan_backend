@@ -9,5 +9,6 @@ import java.util.List;
 @Builder
 public class FeedResponseUserAndContent {
     private String mode;
+    private Long page;
     private List<FeedResponseUserAndContentGetUser> feeds;
 }

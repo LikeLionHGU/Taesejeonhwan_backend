@@ -7,7 +7,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class FeedResponseSearch {
+public class FeedResponseSearchUser {
     private String result;
-    private List<FeedResponseSearchContent> results;
+    private List<FeedResponseSearchUserResult> results;
 }

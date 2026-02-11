@@ -18,8 +18,10 @@ public class Genre{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(name="genre_name")
     private String genre_name;
+
     private Long tmdb_id;
 
     @OneToMany(mappedBy = "genre", fetch=FetchType.LAZY,
