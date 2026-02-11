@@ -10,4 +10,5 @@ public class FeedResponseGetUserContent {
     private String title;
     private String poster;
     private Float rating;
+    private int year;
 }

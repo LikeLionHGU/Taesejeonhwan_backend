@@ -9,6 +9,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,30 +26,32 @@ public class UserService {
     private final GenreRepository genreRepository;
     private final ProfileImgRepository profileImgRepository;
     private final FollowRepository followRepository;
+    private final ReviewRepository reviewRepository;
+    private final UserContentRepository userContentsRepository;
 
     public UserResponseResult setProfileImage(UserRequestSetImage userRequestSetImage) {
-       try {
-           User user = userRepository.findById(userRequestSetImage.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
-           user.builder()
-                   .profile_img(userRequestSetImage.getProfile_img())
-                   .build();
-           userRepository.save(user);
+        try {
+            User user = userRepository.findById(userRequestSetImage.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
+            user.builder()
+                    .profile_img(userRequestSetImage.getProfile_img())
+                    .build();
+            userRepository.save(user);
 
-           String resultReturn;
-           if(userRepository.existsByIdAndProfileImg(userRequestSetImage.getUserId(), userRequestSetImage.getProfile_img())) {
-               resultReturn = "success";
-           }
-           else {
-               resultReturn = "fail";
-           }
-           return UserResponseResult.builder()
-                   .result(resultReturn)
-                   .build();
-       } catch (Exception e) {
-           return UserResponseResult.builder()
-                   .result("fail")
-                   .build();
-       }
+            String resultReturn;
+            if(userRepository.existsByIdAndProfileImg(userRequestSetImage.getUserId(), userRequestSetImage.getProfile_img())) {
+                resultReturn = "success";
+            }
+            else {
+                resultReturn = "fail";
+            }
+            return UserResponseResult.builder()
+                    .result(resultReturn)
+                    .build();
+        } catch (Exception e) {
+            return UserResponseResult.builder()
+                    .result("fail")
+                    .build();
+        }
     }
 
     public UserResponseResult setNickname(UserRequestSetNickname userRequestSetNickname) {
@@ -80,6 +84,39 @@ public class UserService {
                     ));
             //content_id모음
             List<Long> contentIds = new ArrayList<>(ratingMap.keySet());
+            LocalDate localDate = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String reviewDate = localDate.format(formatter);
+
+            User reviewUser = userRepository.findById(userRequestSetPreference.getUser_id())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            List<Content> contents = contentRepository.findAllById(contentIds);
+            Map<Long, Content> contentMap = contents.stream()
+                    .collect(Collectors.toMap(Content::getId, c -> c));
+
+            for (int i = 0; i < contentIds.size(); i++) {
+                Long contentId = contentIds.get(i);
+                Float contentRating = ratingMap.get(contentId);
+
+                Content content = contentMap.get(contentId);
+                reviewRepository.save(
+                        Review.builder()
+                                .rating(contentRating)
+                                .comment(null)
+                                .create_time(reviewDate)
+                                .user(reviewUser)
+                                .content(content)
+                                .build()
+                );
+
+                userContentsRepository.save(
+                        UserContent.builder()
+                                .user(reviewUser)
+                                .content(content)
+                                .build()
+                );
+
+            }
             //content_id로 해당하는 ContentGenre 리스트업
             List<ContentGenre> contentGenres = contentGenreRepository.findAllByContent_IdIn(contentIds);
             //genre_id와 장릐의 통계(횟수, 별점, 최소 content_id) 매핑하기
@@ -157,13 +194,13 @@ public class UserService {
             User user = userRepository.findById(user_id).orElseThrow(() -> new RuntimeException("User not found"));
 
             int followerCount = followRepository.findAllByUser_id(user_id).size();
-            int followingCount = followRepository.findAllByAnother_user_id(user_id).size();
+            int followingCount = followRepository.findAllByAnotherUser_Id(user_id).size();
 
             List<UserResponseProfileGenre> table = userGenreRepository.findByUser_Id(user_id).stream()
                     .map(UserResponseProfileGenre::from)
                     .toList();
 
-            UserResponseProfile.builder()
+            return UserResponseProfile.builder()
                     .result("success")
                     .nickname(user.getNickname())
                     .profile_img(user.getProfile_img())
@@ -179,7 +216,5 @@ public class UserService {
                     .result("success")
                     .build();
         }
-
-
     }
 }

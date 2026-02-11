@@ -23,7 +23,7 @@ public class User {
 
     @Pattern(regexp = "^@?[a-zA-Z0-9]+$")
     @Size(min = 2, max = 8)
-    @Column(length = 10, nullable = false)
+    @Column(length = 10, nullable = true)
     private String nickname;
 
     @Column(nullable = false, length = 50)
