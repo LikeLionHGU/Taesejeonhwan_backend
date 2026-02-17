@@ -1,5 +1,7 @@
 package org.example.taesejeanhwan_backend.controller;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.dto.feed.response.*;
 import org.example.taesejeanhwan_backend.dto.feed.request.*;

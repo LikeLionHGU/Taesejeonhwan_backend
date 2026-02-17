@@ -29,6 +29,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final GenreRepository genreRepository;
     private final UserWishRepository userWishRepository;
+
     public FeedResponseReviewUpdate updateReview(FeedRequestReviewUpdate req) {
 
         // 1) 유저/콘텐츠 찾기 (너 서비스에서 이미 쓰던 방식 그대로)
