@@ -25,8 +25,11 @@ public class WishService {
     private final UserWishRepository userWishRepository;
 
     public FeedResponseResult addWish(FeedRequestAddWish feedRequestAddWish) {
-        Content wishContent = contentRepository.findByContentId(feedRequestAddWish.getContent_id());
-        User wishUser = userRepository.findByUser_id(feedRequestAddWish.getUser_id());
+        if (feedRequestAddWish.getContent_id() == null|| feedRequestAddWish.getUser_id() == null) {
+            throw new IllegalArgumentException("content_id and user_id cannot be null");
+        }
+        Content wishContent = contentRepository.findById(feedRequestAddWish.getContent_id()).orElseThrow(()->new RuntimeException("Content not found"));
+        User wishUser = userRepository.findById(feedRequestAddWish.getUser_id()).orElseThrow(()->new RuntimeException("User not found"));
 
         userWishRepository.save(
                 UserWish.builder()
@@ -45,7 +48,10 @@ public class WishService {
     }
 
     public List<FeedResponseGetWish> getWishList(Long user_id) {
-        User user = userRepository.findByUser_id(user_id);
+        if (user_id == null) {
+            throw new IllegalArgumentException("user_id cannot be null");
+        }
+        User user = userRepository.findById(user_id).orElseThrow(()->new RuntimeException("User not found"));
         List<Long> contentIds = userWishRepository.findContent_idByUser(user);
         List<Content> contents = contentRepository.findAllById(contentIds);
         return contents.stream()

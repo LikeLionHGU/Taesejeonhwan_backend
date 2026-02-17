@@ -3,6 +3,7 @@ package org.example.taesejeanhwan_backend.controller;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.dto.feed.response.*;
 import org.example.taesejeanhwan_backend.dto.feed.request.*;
+import org.example.taesejeanhwan_backend.dto.user.response.UserResponseSearchUser;
 import org.example.taesejeanhwan_backend.service.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,10 +18,8 @@ public class FeedController {
     public final UserService userService;
     public final WishService wishService;
     public final ContentService contentService;
-    public final UserContentService userContentService;
-    public final GenreService genreService;
-    public final UserGenreService userGenreService;
 
+    //리뷰추가
     @PostMapping("/reviews")
     public FeedResponseResult addReview(@RequestBody FeedRequestAddReview feedAddReview) {
         return reviewService.addReview(feedAddReview);
@@ -56,24 +55,28 @@ public class FeedController {
         return userContentService.getUserContents(user_id);
     }
 
-    @GetMapping("/{mode}")
-    public FeedResponseUserAndContent getUserAndContent(@PathVariable String mode, @RequestParam("page") Long page) {
-        return contentService.getUserAndContent(mode, page);
+    //mode에 따른 유저와 콘텐츠 보기
+    @GetMapping("/{mode}/{user_id}")
+    public FeedResponseUserAndContent getUserAndContent(@PathVariable String mode, @PathVariable Long user_id, @RequestParam("page") int page) {
+        return contentService.getUserAndContent(mode, user_id, page);
     }
 
+    //콘텐츠 검색
     @GetMapping("/search-content/{keyword}")
     public FeedResponseSearchContent searchContent(@PathVariable String keyword) {
         return contentService.searchContent(keyword);
     }
 
+    //유저 검색
     @GetMapping("/search-user/{keyword}")
-    public FeedResponseSearchUser searchUser(@PathVariable String keyword) {
-        return contentService.searchUser(keyword);
+    public UserResponseSearchUser searchUser(@PathVariable String keyword) {
+        return userService.searchUser(keyword);
     }
 
     //준혁
     @GetMapping("/genre")
     public List<FeedResponseGetGenre> getAllGenres() {
+
         return contentService.getAllGenres();
     }
 

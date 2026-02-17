@@ -15,7 +15,7 @@ public class UserResponseFollowList {
         return UserResponseFollowList.builder()
                 .user_id(follow.getAnotherUser().getId())
                 .nickname(follow.getAnotherUser().getNickname())
-                .profile_img(follow.getAnotherUser().getProfile_img())
+                .profile_img(follow.getAnotherUser().getProfileImg().getImgUrl())
                 .build();
 
     }
@@ -24,7 +24,7 @@ public class UserResponseFollowList {
         return UserResponseFollowList.builder()
                 .user_id(follow.getUser().getId())
                 .nickname(follow.getUser().getNickname())
-                .profile_img(follow.getUser().getProfile_img())
+                .profile_img(follow.getUser().getProfileImg().getImgUrl())
                 .build();
 
     }

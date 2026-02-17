@@ -16,9 +16,9 @@ import java.util.List;
 public class ProfileImg {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long img_id;
+    private Long id;
 
-    private String img_url;
+    private String imgUrl;
 
     @OneToMany(mappedBy = "profileImg")
     private List<User> users = new ArrayList<>();
