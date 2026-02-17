@@ -3,6 +3,8 @@ package org.example.taesejeanhwan_backend.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -21,7 +23,7 @@ public class Review {
     @Column(length = 100)
     private String comment;
 
-    private String create_time;
+    private LocalDate createTime;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)

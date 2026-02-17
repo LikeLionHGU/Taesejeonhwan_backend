@@ -10,7 +10,6 @@ import org.example.taesejeanhwan_backend.dto.user.response.UserResponseResult;
 import org.example.taesejeanhwan_backend.repository.FollowRepository;
 import org.example.taesejeanhwan_backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 
@@ -18,13 +17,15 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class FollowService {
-
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
 
     public UserResponseResult follow(UserRequestFollow userRequestFollow) {
+        if (userRequestFollow.getFollow_id() == null || userRequestFollow.getUser_id() == null) {
+            throw new IllegalArgumentException("Invalid request parameter");
+        }
         Follow follow = followRepository.findByUser_id(userRequestFollow.getUser_id());
-        User user = userRepository.findByUser_id(userRequestFollow.getFollow_id());
+        User user = userRepository.findById(userRequestFollow.getFollow_id()).orElseThrow(()->new RuntimeException("User not found"));
         follow.builder()
                 .anotherUser(user)
                 .build();
@@ -40,6 +41,9 @@ public class FollowService {
     }
 
     public List<UserResponseFollowList> getFollowerList(Long user_id) {
+        if (user_id == null) {
+            throw new IllegalArgumentException("Invalid request parameter");
+        }
         List<Follow> followers = followRepository.findAllByAnotherUser_Id(user_id);
         return followers.stream()
                 .map(UserResponseFollowList::follower)
@@ -47,6 +51,9 @@ public class FollowService {
     }
 
     public List<UserResponseFollowList> getFollowingList(Long user_id) {
+        if (user_id == null) {
+            throw new IllegalArgumentException("Invalid request parameter");
+        }
         List<Follow> followings = followRepository.findAllByUser_id(user_id);
         return followings.stream()
                 .map(UserResponseFollowList::following)
@@ -54,6 +61,13 @@ public class FollowService {
     }
 
     public UserResponseResult deleteFollow(UserRequestFollow userRequestFollow) {
+        if (userRequestFollow.getFollow_id() == null||userRequestFollow.getUser_id() == null) {
+            throw new IllegalArgumentException("Ids cannot be null");
+        }
+
+        if(userRequestFollow.getFollow_id().equals(userRequestFollow.getUser_id())) {
+            throw new RuntimeException("You can't delete yourself");
+        }
         Follow follow = followRepository.findByUser_idAndAnotherUser_Id(userRequestFollow.getUser_id(), userRequestFollow.getFollow_id());
         followRepository.delete(follow);
         if (followRepository.existsByUser_idAndAnotherUser_Id(userRequestFollow.getUser_id(), userRequestFollow.getFollow_id())) {

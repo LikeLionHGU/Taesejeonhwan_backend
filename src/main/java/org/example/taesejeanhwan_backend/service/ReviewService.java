@@ -1,25 +1,20 @@
 package org.example.taesejeanhwan_backend.service;
 
 import jakarta.transaction.Transactional;
-import jdk.jfr.ContentType;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.domain.*;
 import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestAddReview;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseGetContent;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseGetReview;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseResult;
-import org.example.taesejeanhwan_backend.dto.user.GenreStatDto;
 import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestReviewUpdate;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseReviewUpdate;
-import org.example.taesejeanhwan_backend.dto.user.request.UserRequestSetPreferenceContent;
 import org.example.taesejeanhwan_backend.repository.*;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 
 @Service
@@ -29,15 +24,15 @@ public class ReviewService {
 
     private final UserRepository userRepository;
     private final ContentRepository contentRepository;
-    private final UserContentRepository userContentRepository;
     private final ContentGenreRepository contentGenreRepository;
-
+    private final UserGenreRepository userGenreRepository;
     private final ReviewRepository reviewRepository;
     private final GenreRepository genreRepository;
+    private final UserWishRepository userWishRepository;
     public FeedResponseReviewUpdate updateReview(FeedRequestReviewUpdate req) {
 
         // 1) 유저/콘텐츠 찾기 (너 서비스에서 이미 쓰던 방식 그대로)
-        User user = userRepository.findByUser_id(req.getUser_id());
+        User user = userRepository.findById(req.getUser_id()).orElseThrow(()->new RuntimeException("User Not Found"));
         if (user == null) throw new RuntimeException("User not found");
 
         Content content = contentRepository.findByContentId(req.getContent_id());
@@ -67,62 +62,180 @@ public class ReviewService {
     }
 
     public FeedResponseResult addReview(FeedRequestAddReview feedRequestAddReview) {
-        Content reviewContent = contentRepository.findById(feedRequestAddReview.getContent_id())
-                .orElseThrow(() -> new RuntimeException("Content not found"));
-        User reviewUser = userRepository.findById(feedRequestAddReview.getUser_id())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Review.builder()
-                .comment(feedRequestAddReview.getComment())
-                .rating(feedRequestAddReview.getRating())
-                .user(reviewUser)
-                .content(reviewContent)
-                .build();
+        try {
+            if (feedRequestAddReview == null) {
+                throw new IllegalArgumentException("Request is null");
+            }
 
-        //UserContents 영화 다 불러오기
-        List<Content> contents = userContentRepository.findAllContent();
+            if (feedRequestAddReview.getRating() < 0 || feedRequestAddReview.getRating() > 5) {
+                throw new IllegalArgumentException("Rating must be between 0 and 5");
+            }
 
-        Map<Long, Float> ratingMap = contents
-                .stream()
-                .collect(Collectors.toMap(
-                        UserRequestSetPreferenceContent::getRating
-                ));
+            Content reviewContent = contentRepository.findById(feedRequestAddReview.getContent_id())
+                    .orElseThrow(() -> new RuntimeException("Content not found"));
 
-        // 순위 게산하기
+            User reviewUser = userRepository.findById(feedRequestAddReview.getUser_id())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-        //UserGenre와 비교하기,
-          // 비교할 때 UserContents 순위 계산한 거 1-5 중에 없는게
-          // UserGenre에 있을 시 그 장르 아이디와 rating(장르별평점) 을 저장해놓기
-        //리뷰 추가한 콘텐츠도 더해서 다시 순위 계산하기
-        //순위 계산한거 1-5 중에서 따로 저장해놓은 키워드(사용자가 수정한) 를 제외하고 남은 자리만큼 순위 메기기
-        //순위 + 저장해놓은거 가 새로운 userGenre
+            // 리뷰 추가 전 장르 순위 계산
+            List<Review> beforeReviews = reviewRepository.findByUser(reviewUser);
+            List<Genre> beforeTop5 = calculateTopGenres(beforeReviews);
 
+            if (beforeTop5 == null) {
+                beforeTop5 = new ArrayList<>();
+            }
 
+            // 기존 UserGenre와 비교해서 안 겹치는 것 백업
+            List<UserGenre> existingUserGenres = userGenreRepository.findByUser(reviewUser);
+
+            Set<Genre> backupGenres = new HashSet<>();
+            for (UserGenre ug : existingUserGenres) {
+                if (!beforeTop5.contains(ug.getGenre())) {
+                    backupGenres.add(ug.getGenre());
+                }
+            }
+
+            // 신규 리뷰 저장
+            Review review = Review.builder()
+                    .comment(feedRequestAddReview.getComment())
+                    .rating(feedRequestAddReview.getRating())
+                    .user(reviewUser)
+                    .content(reviewContent)
+                    .createTime(LocalDate.now())
+                    .build();
+            reviewRepository.save(review);
+
+            // 리뷰 포함 후 다시 계산
+            List<Review> afterReviews = reviewRepository.findByUser(reviewUser);
+            List<Genre> afterTop = calculateTopGenres(afterReviews);
+
+            if (afterTop == null) {
+                afterTop = new ArrayList<>();
+            }
+
+            // 백업 장르 포함해서 최종 5개 구성
+            List<Genre> finalTop5 = new ArrayList<>();
+
+            int limit = Math.max(0, 5 - backupGenres.size());
+
+            for (Genre g : afterTop) {
+                if (finalTop5.size() >= limit) break;
+                finalTop5.add(g);
+            }
+
+            for (Genre backup : backupGenres) {
+                if (finalTop5.size() >= 5) break;
+                if (!finalTop5.contains(backup)) {
+                    finalTop5.add(backup);
+                }
+            }
+
+            // UserGenre 갱신
+            userGenreRepository.deleteByUser(reviewUser);
+
+            for (Genre genre : finalTop5) {
+                UserGenre userGenre = UserGenre.builder()
+                        .user(reviewUser)
+                        .genre(genre)
+                        .build();
+                userGenreRepository.save(userGenre);
+            }
+
+            return FeedResponseResult.builder()
+                    .result("success")
+                    .build();
+
+        } catch (Exception e) {
+
+            return FeedResponseResult.builder()
+                    .result("error")
+                    .build();
+        }
+    }
+
+    private List<Genre> calculateTopGenres(List<Review> reviews) {
+        Map<Genre, Integer> countMap = new HashMap<>();
+        Map<Genre, Float> ratingSumMap = new HashMap<>();
+
+        for (Review r : reviews) {
+            List<ContentGenre> contentGenres = contentGenreRepository.findByContent(r.getContent());
+            for (ContentGenre cg : contentGenres) {
+                Genre genre = cg.getGenre();
+                countMap.put(genre, countMap.getOrDefault(genre, 0) + 1);
+                ratingSumMap.put(genre, ratingSumMap.getOrDefault(genre, 0f) + r.getRating());
+            }
+        }
+
+        List<Genre> genreList = new ArrayList<>(countMap.keySet());
+        //많이 겹치는 순, 평균 평점 높은 순, 장르 아이디 작은 순으로 정렬
+        genreList.sort(
+                Comparator
+                        .comparing((Genre g) -> countMap.get(g)).reversed()
+                        .thenComparing(g -> ratingSumMap.get(g) / countMap.get(g), Comparator.reverseOrder())
+                        .thenComparing(Genre::getId)
+        );
+
+        return genreList.stream().limit(5).toList();
     }
 
     public FeedResponseGetContent getContentReview(Long user_id, Long content_id) {
-        User user = userRepository.findByUser_id(user_id);
-        Content content = contentRepository.findByContentId(content_id);
-        Review review = reviewRepository.findByContentAndUser(content, user);
-        List<Long> genreIds = contentGenreRepository.findGenre_IdByContent(content);
-        List<String> genreNames = new ArrayList<>();
-        for(Long id:genreIds){
-            genreNames.add(genreRepository.findGenreById(id).getGenre_name());
-        }
+        try {
+            if (user_id == null || content_id == null) {
+                throw new IllegalArgumentException("Invalid request parameter");
+            }
+            User user = userRepository.findById(user_id).orElseThrow(() -> new RuntimeException("User not found"));
+            Content content = contentRepository.findById(content_id).orElseThrow(() -> new RuntimeException("Content not found"));
+            Review review = reviewRepository.findByContentAndUser(content, user);
 
-        return FeedResponseGetContent.builder()
-                .title(content.getTitle())
-                .poster(content.getPoster())
-                .overview(content.getOverview())
-                .rating(review.getRating())
-                .year(content.getYear())
-                .comment(review.getComment())
-                .genre_name(genreNames)
-                .create_time(review.getCreate_time())
-                .build();
+            if (review == null) {
+                throw new RuntimeException("Review not found");
+            }
+
+            List<Long> genreIds = contentGenreRepository.findGenre_IdByContent(content);
+            List<String> genreNames = new ArrayList<>();
+            for (Long id : genreIds) {
+                Genre genre = genreRepository.findGenreById(id);
+
+                if (genre != null) {
+                    genreNames.add(genre.getGenre_name());
+                }
+            }
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            String formattedDate = review.getCreateTime().format(formatter);
+
+            return FeedResponseGetContent.builder()
+                    .title(content.getTitle())
+                    .poster(content.getPoster())
+                    .overview(content.getOverview())
+                    .rating(review.getRating())
+                    .year(content.getYear())
+                    .comment(review.getComment())
+                    .is_wished(userWishRepository.existsByUserAndContent(user, content))
+                    .genre_name(genreNames)
+                    .create_time(formattedDate)
+                    .build();
+
+        } catch (Exception e) {
+            return FeedResponseGetContent.builder()
+                    .title(null)
+                    .poster(null)
+                    .overview(null)
+                    .rating(0f)
+                    .year(0)
+                    .comment("Error occurred")
+                    .is_wished(false)
+                    .genre_name(List.of())
+                    .create_time(null)
+                    .build();
+        }
     }
 
     public List<FeedResponseGetReview> getAllReviews(Long content_id) {
-        Content content = contentRepository.findByContentId(content_id);
+        if (content_id == null) {
+            throw new IllegalArgumentException("Invalid request parameter");
+        }
+        Content content = contentRepository.findById(content_id).orElseThrow(()->new RuntimeException("Content not found"));
         List<Review> reviews = reviewRepository.findByContent(content);
         return reviews.stream()
                 .map(FeedResponseGetReview::from)

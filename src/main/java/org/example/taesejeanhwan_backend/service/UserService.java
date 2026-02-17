@@ -1,6 +1,8 @@
 package org.example.taesejeanhwan_backend.service;
 
 import org.example.taesejeanhwan_backend.domain.*;
+import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseSearchContent;
+import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseSearchContentResult;
 import org.example.taesejeanhwan_backend.dto.user.GenreStatDto;
 import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestUpdateGenre;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseResult;
@@ -11,8 +13,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,13 +35,14 @@ public class UserService {
     public UserResponseResult setProfileImage(UserRequestSetImage userRequestSetImage) {
         try {
             User user = userRepository.findById(userRequestSetImage.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
+            ProfileImg profile = profileImgRepository.findByImgUrl(userRequestSetImage.getProfile_img());
             user.builder()
-                    .profile_img(userRequestSetImage.getProfile_img())
+                    .profileImg(profile)
                     .build();
             userRepository.save(user);
 
             String resultReturn;
-            if(userRepository.existsByIdAndProfileImg(userRequestSetImage.getUserId(), userRequestSetImage.getProfile_img())) {
+            if(userRepository.existsByIdAndProfileImg(userRequestSetImage.getUserId(), profile)) {
                 resultReturn = "success";
             }
             else {
@@ -57,6 +59,12 @@ public class UserService {
     }
 
     public UserResponseResult setNickname(UserRequestSetNickname userRequestSetNickname) {
+        if (userRequestSetNickname.getNickname() == null) {
+            throw new IllegalArgumentException("nickname cannot be null");
+        }
+        if (userRequestSetNickname.getUser_id() == null) {
+            throw new IllegalArgumentException("user_id cannot be null");
+        }
         User user = userRepository.findById(userRequestSetNickname.getUser_id()).orElseThrow(() -> new RuntimeException("User not found"));
         user.builder()
                 .nickname(userRequestSetNickname.getNickname())
@@ -64,7 +72,7 @@ public class UserService {
         userRepository.save(user);
 
         String resultReturn;
-        if(userRepository.existsByIdAndNickname(userRequestSetNickname.getNickname(), userRequestSetNickname.getUser_id())) {
+        if(userRepository.existsByIdAndNickname(userRequestSetNickname.getUser_id(), userRequestSetNickname.getNickname())) {
             resultReturn = "success";
         }
         else {
@@ -87,8 +95,6 @@ public class UserService {
             //content_id모음
             List<Long> contentIds = new ArrayList<>(ratingMap.keySet());
             LocalDate localDate = LocalDate.now();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            String reviewDate = localDate.format(formatter);
 
             User reviewUser = userRepository.findById(userRequestSetPreference.getUser_id())
                     .orElseThrow(() -> new RuntimeException("User not found"));
@@ -105,7 +111,7 @@ public class UserService {
                         Review.builder()
                                 .rating(contentRating)
                                 .comment(null)
-                                .create_time(reviewDate)
+                                .createTime(localDate)
                                 .user(reviewUser)
                                 .content(content)
                                 .build()
@@ -174,6 +180,9 @@ public class UserService {
     }
 
     public UserResponseCheckNickname checkNickname(UserRequestCheckNickname userRequestCheckNickname) {
+        if(userRequestCheckNickname.getNickname().isEmpty()) {
+            throw new IllegalArgumentException("nickname cannot be empty");
+        }
         if(userRepository.existsByNickname(userRequestCheckNickname.getNickname())) {
             return UserResponseCheckNickname.builder()
                     .is_available(false)
@@ -190,7 +199,11 @@ public class UserService {
                 .map(UserResponseProfileImage::from)
                 .toList();
     }
+
     public UserResponseProfile getProfile(Long user_id) {
+        if (user_id == null) {
+            throw new IllegalArgumentException("user_id cannot be null");
+        }
         try {
             User user = userRepository.findById(user_id).orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -204,7 +217,7 @@ public class UserService {
             return UserResponseProfile.builder()
                     .result("success")
                     .nickname(user.getNickname())
-                    .profile_img(user.getProfile_img())
+                    .profile_img(user.getProfileImg().getImgUrl())
                     .stats(UserResponseProfileDataFollow.builder()
                             .follower_count(followerCount)
                             .following_count(followingCount)
@@ -214,9 +227,34 @@ public class UserService {
                     .build();
         } catch (Exception e) {
             return UserResponseProfile.builder()
-                    .result("success")
+                    .result("fail")
                     .build();
         }
+    }
+
+    public UserResponseSearchUser searchUser(String keyword) {
+        if (keyword == null || keyword.isEmpty()) {
+            throw new IllegalArgumentException("keyword cannot be empty");
+        }
+        if (!userRepository.existsByNickname(keyword)) {
+            return UserResponseSearchUser.builder()
+                    .result("fail")
+                    .build();
+        }
+        User user = userRepository.findByNickname(keyword);
+
+        List<UserResponseSearchUserResult> users = new ArrayList<>();
+        users.add(
+                UserResponseSearchUserResult.builder()
+                        .user_id(user.getId())
+                        .nickname(user.getNickname())
+                        .profile_img(user.getProfileImg().getImgUrl())
+                        .build()
+        );
+        return UserResponseSearchUser.builder()
+                .result("success")
+                .results(users)
+                .build();
     }
 
     public FeedResponseResult updateKeyword(Long userId, FeedRequestUpdateGenre req) {

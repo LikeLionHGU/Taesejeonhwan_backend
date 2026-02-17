@@ -11,7 +11,7 @@ public class UserResponseProfileImage {
 
     public static UserResponseProfileImage from(ProfileImg profileImg) {
         return builder()
-                .profile_img(profileImg.getImg_url())
+                .profile_img(profileImg.getImgUrl())
                 .build();
     }
 }
