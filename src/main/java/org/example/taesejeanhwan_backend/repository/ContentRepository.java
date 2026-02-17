@@ -10,7 +10,6 @@ import java.util.List;
 public interface ContentRepository extends JpaRepository<Content, Long> {
     boolean existsByTitleAndYearAndPoster(String title, long year, String poster);
 
-    List<Content> findAllByTitle(String keyword);
-
+    List<Content> findAllByTitleContaining(String keyword);
 }
 

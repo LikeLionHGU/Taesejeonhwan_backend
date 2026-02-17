@@ -17,4 +17,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findTop5ByUserAndContentInOrderByRatingDescCreateTimeDesc(User user, List<Content> contents);
 
     List<Review> findByUser(User reviewUser);
+
+    List<Review> findByUserAndContentIn(User user, List<Content> contents);
 }

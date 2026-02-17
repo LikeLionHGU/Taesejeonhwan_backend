@@ -45,8 +45,8 @@ public class UserController {
 
     //닉네임 중복 확인
     @GetMapping("/check-nickname")
-    public UserResponseCheckNickname checkNickname(@RequestBody UserRequestCheckNickname userRequestCheckNickname) {
-        return userService.checkNickname(userRequestCheckNickname);
+    public UserResponseCheckNickname checkNickname(@RequestParam String nickname) {
+        return userService.checkNickname(nickname);
     }
 
     //콘텐츠 목록 100개 가져오기

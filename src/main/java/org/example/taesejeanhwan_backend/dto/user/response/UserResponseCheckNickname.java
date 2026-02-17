@@ -6,5 +6,5 @@ import lombok.Data;
 @Data
 @Builder
 public class UserResponseCheckNickname {
-    private boolean is_available;
+    private boolean available;
 }

@@ -179,56 +179,43 @@ public class ReviewService {
     }
 
     public FeedResponseGetContent getContentReview(Long user_id, Long content_id) {
-        try {
-            if (user_id == null || content_id == null) {
-                throw new IllegalArgumentException("Invalid request parameter");
-            }
-            User user = userRepository.findById(user_id).orElseThrow(() -> new RuntimeException("User not found"));
-            Content content = contentRepository.findById(content_id).orElseThrow(() -> new RuntimeException("Content not found"));
-            Review review = reviewRepository.findByContentAndUser(content, user);
 
-            if (review == null) {
-                throw new RuntimeException("Review not found");
-            }
-
-            List<Long> genreIds = contentGenreRepository.findGenre_IdByContent(content);
-            List<String> genreNames = new ArrayList<>();
-            for (Long id : genreIds) {
-                Genre genre = genreRepository.findGenreById(id);
-
-                if (genre != null) {
-                    genreNames.add(genre.getGenreName());
-                }
-            }
-
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            String formattedDate = review.getCreateTime().format(formatter);
-
-            return FeedResponseGetContent.builder()
-                    .title(content.getTitle())
-                    .poster(content.getPoster())
-                    .overview(content.getOverview())
-                    .rating(review.getRating())
-                    .year(content.getYear())
-                    .comment(review.getComment())
-                    .is_wished(userWishRepository.existsByUserAndContent(user, content))
-                    .genre_name(genreNames)
-                    .create_time(formattedDate)
-                    .build();
-
-        } catch (Exception e) {
-            return FeedResponseGetContent.builder()
-                    .title(null)
-                    .poster(null)
-                    .overview(null)
-                    .rating(0f)
-                    .year(0)
-                    .comment("Error occurred")
-                    .is_wished(false)
-                    .genre_name(List.of())
-                    .create_time(null)
-                    .build();
+        if (user_id == null || content_id == null) {
+            throw new IllegalArgumentException("Invalid request parameter");
         }
+
+        User user = userRepository.findById(user_id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Content content = contentRepository.findById(content_id)
+                .orElseThrow(() -> new RuntimeException("Content not found"));
+
+        Review review = reviewRepository.findByContentAndUser(content, user);
+
+        if (review == null) {
+            throw new RuntimeException("Review not found");
+        }
+
+        List<String> genreNames = contentGenreRepository.findByContent(content)
+                .stream()
+                .map(ContentGenre::getGenre)
+                .map(Genre::getGenreName)
+                .toList();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String formattedDate = review.getCreateTime().format(formatter);
+
+        return FeedResponseGetContent.builder()
+                .title(content.getTitle())
+                .poster(content.getPoster())
+                .overview(content.getOverview())
+                .rating(review.getRating())
+                .year(content.getYear())
+                .comment(review.getComment())
+                .wished(userWishRepository.existsByUserAndContent(user, content))
+                .genre_name(genreNames)
+                .create_time(formattedDate)
+                .build();
     }
 
     public List<FeedResponseGetReview> getAllReviews(Long content_id) {
