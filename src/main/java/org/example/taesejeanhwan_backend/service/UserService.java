@@ -32,54 +32,40 @@ public class UserService {
     private final ReviewRepository reviewRepository;
     private final UserContentRepository userContentsRepository;
 
-    public UserResponseResult setProfileImage(UserRequestSetImage userRequestSetImage) {
-        try {
-            User user = userRepository.findById(userRequestSetImage.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
-            ProfileImg profile = profileImgRepository.findByImgUrl(userRequestSetImage.getProfile_img());
-            user.builder()
-                    .profileImg(profile)
-                    .build();
-            userRepository.save(user);
+    public UserResponseResult setProfileImage(UserRequestSetImage request) {
 
-            String resultReturn;
-            if(userRepository.existsByIdAndProfileImg(userRequestSetImage.getUserId(), profile)) {
-                resultReturn = "success";
-            }
-            else {
-                resultReturn = "fail";
-            }
-            return UserResponseResult.builder()
-                    .result(resultReturn)
-                    .build();
-        } catch (Exception e) {
-            return UserResponseResult.builder()
-                    .result("fail")
-                    .build();
+        User user = userRepository.findById(request.getUser_id())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        ProfileImg profile = profileImgRepository.findByImgUrl(request.getProfile_img());
+
+        if (profile == null) {
+            throw new IllegalArgumentException("Profile image not found");
         }
+
+        user.setProfileImg(profile);
+
+        return UserResponseResult.builder()
+                .result("success")
+                .build();
     }
 
-    public UserResponseResult setNickname(UserRequestSetNickname userRequestSetNickname) {
-        if (userRequestSetNickname.getNickname() == null) {
+    public UserResponseResult setNickname(UserRequestSetNickname request) {
+
+        if (request.getNickname() == null) {
             throw new IllegalArgumentException("nickname cannot be null");
         }
-        if (userRequestSetNickname.getUser_id() == null) {
+        if (request.getUser_id() == null) {
             throw new IllegalArgumentException("user_id cannot be null");
         }
-        User user = userRepository.findById(userRequestSetNickname.getUser_id()).orElseThrow(() -> new RuntimeException("User not found"));
-        user.builder()
-                .nickname(userRequestSetNickname.getNickname())
-                .build();
-        userRepository.save(user);
 
-        String resultReturn;
-        if(userRepository.existsByIdAndNickname(userRequestSetNickname.getUser_id(), userRequestSetNickname.getNickname())) {
-            resultReturn = "success";
-        }
-        else {
-            resultReturn = "fail";
-        }
+        User user = userRepository.findById(request.getUser_id())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setNickname(request.getNickname());
+
         return UserResponseResult.builder()
-                .result(resultReturn)
+                .result("success")
                 .build();
     }
 
@@ -207,8 +193,8 @@ public class UserService {
         try {
             User user = userRepository.findById(user_id).orElseThrow(() -> new RuntimeException("User not found"));
 
-            int followerCount = followRepository.findAllByUser_id(user_id).size();
-            int followingCount = followRepository.findAllByAnotherUser_Id(user_id).size();
+            int followerCount = followRepository.findAllByAnotherUser_Id(user_id).size();
+            int followingCount = followRepository.findAllByUser_id(user_id).size();
 
             List<UserResponseProfileGenre> table = userGenreRepository.findByUser_Id(user_id).stream()
                     .map(UserResponseProfileGenre::from)
@@ -233,27 +219,34 @@ public class UserService {
     }
 
     public UserResponseSearchUser searchUser(String keyword) {
+
         if (keyword == null || keyword.isEmpty()) {
             throw new IllegalArgumentException("keyword cannot be empty");
         }
-        if (!userRepository.existsByNickname(keyword)) {
+
+        List<User> users = userRepository.findByNicknameContaining(keyword);
+
+        if (users.isEmpty()) {
             return UserResponseSearchUser.builder()
                     .result("fail")
                     .build();
         }
-        User user = userRepository.findByNickname(keyword);
 
-        List<UserResponseSearchUserResult> users = new ArrayList<>();
-        users.add(
-                UserResponseSearchUserResult.builder()
+        List<UserResponseSearchUserResult> results = users.stream()
+                .map(user -> UserResponseSearchUserResult.builder()
                         .user_id(user.getId())
                         .nickname(user.getNickname())
-                        .profile_img(user.getProfileImg().getImgUrl())
+                        .profile_img(
+                                user.getProfileImg() != null ?
+                                        user.getProfileImg().getImgUrl() : null
+                        )
                         .build()
-        );
+                )
+                .toList();
+
         return UserResponseSearchUser.builder()
                 .result("success")
-                .results(users)
+                .results(results)
                 .build();
     }
 

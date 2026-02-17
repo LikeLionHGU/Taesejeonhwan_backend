@@ -183,7 +183,7 @@ public class ContentService {
         if(keyword == null || keyword.isEmpty()) {
             throw new IllegalArgumentException("Invalid keyword");
         }
-        List<Content> contents = contentRepository.findAllByTitle(keyword);
+        List<Content> contents = contentRepository.findAllByTitleContaining(keyword);
         if (contents.isEmpty()) {
             return FeedResponseSearchContent.builder()
                     .result("fail")

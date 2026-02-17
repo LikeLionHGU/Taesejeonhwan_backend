@@ -12,8 +12,6 @@ import java.util.List;
 public interface ContentGenreRepository extends JpaRepository<ContentGenre, Long> {
     List<ContentGenre> findAllByContent_IdIn (List<Long> contentIds);
 
-    List<Long> findGenre_IdByContent(Content content);
-
     boolean existsByContentIdAndGenreId(Long contentId, Long genreId);
 
     List<ContentGenre> findByContent(Content content);

@@ -1,5 +1,7 @@
 package org.example.taesejeanhwan_backend.controller;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.dto.feed.response.*;
 import org.example.taesejeanhwan_backend.dto.feed.request.*;
@@ -40,7 +42,7 @@ public class FeedController {
 
     //콘텐츠 리뷰 확인
     @GetMapping("/{user_id}/{content_id}/review")
-    public FeedResponseGetContent getContentReview(@PathVariable Long user_id, Long content_id) {
+    public FeedResponseGetContent getContentReview(@PathVariable Long user_id, @PathVariable Long content_id) {
         return reviewService.getContentReview(user_id, content_id);
     }
 
