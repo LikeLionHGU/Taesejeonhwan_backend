@@ -9,6 +9,8 @@ import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseGetConten
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseGetReview;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseResult;
 import org.example.taesejeanhwan_backend.dto.user.GenreStatDto;
+import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestReviewUpdate;
+import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseReviewUpdate;
 import org.example.taesejeanhwan_backend.dto.user.request.UserRequestSetPreferenceContent;
 import org.example.taesejeanhwan_backend.repository.*;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,37 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final GenreRepository genreRepository;
+    public FeedResponseReviewUpdate updateReview(FeedRequestReviewUpdate req) {
+
+        // 1) 유저/콘텐츠 찾기 (너 서비스에서 이미 쓰던 방식 그대로)
+        User user = userRepository.findByUser_id(req.getUser_id());
+        if (user == null) throw new RuntimeException("User not found");
+
+        Content content = contentRepository.findByContentId(req.getContent_id());
+        if (content == null) throw new RuntimeException("Content not found");
+
+        // 2) 해당 유저가 해당 콘텐츠에 남긴 리뷰 찾기
+        Review review = reviewRepository.findByContentAndUser(content, user);
+        if (review == null) throw new RuntimeException("Review not found");
+
+        // 3) 수정 (요청값이 있는 것만 변경)
+        if (req.getComment() != null) {
+            review.setComment(req.getComment());
+        }
+        if (req.getRating() != null) {
+            review.setRating(req.getRating());
+        }
+
+        // 4) 저장
+        Review saved = reviewRepository.save(review);
+
+        // 5) 응답
+        return FeedResponseReviewUpdate.builder()
+                .result("success")
+                .comment(saved.getComment())
+                .rating(saved.getRating())
+                .build();
+    }
 
     public FeedResponseResult addReview(FeedRequestAddReview feedRequestAddReview) {
         Content reviewContent = contentRepository.findById(feedRequestAddReview.getContent_id())
@@ -51,7 +84,6 @@ public class ReviewService {
         Map<Long, Float> ratingMap = contents
                 .stream()
                 .collect(Collectors.toMap(
-
                         UserRequestSetPreferenceContent::getRating
                 ));
 

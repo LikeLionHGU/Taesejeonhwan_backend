@@ -4,5 +4,6 @@ import lombok.Data;
 
 @Data
 public class FeedRequestDeleteWish {
+    private Long user_id;
     private Long content_id;
 }

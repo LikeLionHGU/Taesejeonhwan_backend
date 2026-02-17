@@ -1,10 +1,7 @@
 package org.example.taesejeanhwan_backend.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Getter
@@ -12,6 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 @Table(name = "reviews")
+@Setter
+
 public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

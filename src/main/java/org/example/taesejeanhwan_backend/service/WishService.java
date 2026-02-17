@@ -6,6 +6,7 @@ import org.example.taesejeanhwan_backend.domain.Content;
 import org.example.taesejeanhwan_backend.domain.User;
 import org.example.taesejeanhwan_backend.domain.UserWish;
 import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestAddWish;
+import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestDeleteWish;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseGetWish;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseResult;
 import org.example.taesejeanhwan_backend.repository.ContentRepository;
@@ -52,4 +53,31 @@ public class WishService {
                 .map(FeedResponseGetWish::from)
                 .toList();
     }
+
+    public FeedResponseResult deleteWish(FeedRequestDeleteWish req) {
+        User user = userRepository.findByUser_id(req.getUser_id());
+        if (user == null) {
+            return FeedResponseResult.builder().result("fail").build();
+        }
+
+        Content content = contentRepository.findByContentId(req.getContent_id());
+        if (content == null) {
+            return FeedResponseResult.builder().result("fail").build();
+        }
+
+        UserWish wish = userWishRepository.findByContentAndUser(content, user)
+                .orElse(null);
+
+        if (wish == null) {
+            // 이미 없거나 잘못된 요청
+            return FeedResponseResult.builder().result("fail").build();
+        }
+
+        userWishRepository.delete(wish);
+
+        return FeedResponseResult.builder()
+                .result("success")
+                .build();
+    }
+
 }
