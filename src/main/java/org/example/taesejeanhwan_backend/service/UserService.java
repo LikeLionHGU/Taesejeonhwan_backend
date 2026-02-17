@@ -165,17 +165,17 @@ public class UserService {
         }
     }
 
-    public UserResponseCheckNickname checkNickname(UserRequestCheckNickname userRequestCheckNickname) {
-        if(userRequestCheckNickname.getNickname().isEmpty()) {
+    public UserResponseCheckNickname checkNickname(String nickname) {
+        if(nickname.isEmpty()) {
             throw new IllegalArgumentException("nickname cannot be empty");
         }
-        if(userRepository.existsByNickname(userRequestCheckNickname.getNickname())) {
+        if(userRepository.existsByNickname(nickname)) {
             return UserResponseCheckNickname.builder()
-                    .is_available(false)
+                    .available(false)
                     .build();
         }
         return UserResponseCheckNickname.builder()
-                .is_available(true)
+                .available(true)
                 .build();
     }
 

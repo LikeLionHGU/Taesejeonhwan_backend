@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class UserContentService {
     private final UserContentRepository userContentRepository;
-    private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
 
     public List<FeedResponseGetUserContent> getUserContents(Long userId) {
 
@@ -54,6 +54,5 @@ public class UserContentService {
                 )
                 .toList();
     }
-
 }
 

@@ -70,7 +70,6 @@ public class FollowService {
                 .map(UserResponseFollowList::following)
                 .toList();
     }
-
     public UserResponseResult deleteFollow(UserRequestFollow request) {
 
         if (request.getFollow_id() == null || request.getUser_id() == null) {

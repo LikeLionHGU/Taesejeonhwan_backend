@@ -49,7 +49,7 @@ public class User {
     @JoinColumn(
             name = "profile_img_id",
             referencedColumnName = "img_id",
-            nullable = false
+            nullable = true
     )
     private ProfileImg profileImg;
 
