@@ -11,7 +11,7 @@ public class UserResponseProfileGenre {
 
     public static UserResponseProfileGenre from(UserGenre userGenre) {
         return UserResponseProfileGenre.builder()
-                .keyword(userGenre.getGenre().getGenre_name())
+                .keyword(userGenre.getGenre().getGenreName())
                 .build();
     }
 }

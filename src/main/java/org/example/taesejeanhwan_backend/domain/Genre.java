@@ -20,7 +20,7 @@ public class Genre{
     private Long id;
 
     @Column(name="genre_name")
-    private String genre_name;
+    private String genreName;
 
     @OneToMany(mappedBy = "genre", fetch=FetchType.LAZY,
             cascade=CascadeType.ALL,
