@@ -48,7 +48,11 @@ public class User {
     private List<UserGenre> userGenres = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(nullable=false)
+    @JoinColumn(
+            name = "profile_img_id",
+            referencedColumnName = "img_id",
+            nullable = false
+    )
     private ProfileImg profileImg;
 
 }

@@ -35,7 +35,7 @@ public class ReviewService {
         User user = userRepository.findById(req.getUser_id()).orElseThrow(()->new RuntimeException("User Not Found"));
         if (user == null) throw new RuntimeException("User not found");
 
-        Content content = contentRepository.findByContentId(req.getContent_id());
+        Content content = contentRepository.findById(req.getContent_id()).orElseThrow(()->new RuntimeException("Content Not Found"));
         if (content == null) throw new RuntimeException("Content not found");
 
         // 2) 해당 유저가 해당 콘텐츠에 남긴 리뷰 찾기
@@ -197,7 +197,7 @@ public class ReviewService {
                 Genre genre = genreRepository.findGenreById(id);
 
                 if (genre != null) {
-                    genreNames.add(genre.getGenre_name());
+                    genreNames.add(genre.getGenreName());
                 }
             }
 

@@ -262,7 +262,7 @@ public class UserService {
             List<UserGenre> userGenres = userGenreRepository.findByUser_Id(userId);
 
             UserGenre target = userGenres.stream()
-                    .filter(ug -> ug.getGenre().getGenre_name().equals(req.getGenre_name()))
+                    .filter(ug -> ug.getGenre().getGenreName().equals(req.getGenre_name()))
                     .findFirst()
                     .orElse(null);
 
@@ -270,7 +270,7 @@ public class UserService {
                 return FeedResponseResult.builder().result("fail").build();
             }
 
-            Genre newGenre = genreRepository.findByGenre_name(req.getChanged_genre());
+            Genre newGenre = genreRepository.findByGenreName(req.getChanged_genre());
             if (newGenre == null) {
                 return FeedResponseResult.builder().result("fail").build();
             }

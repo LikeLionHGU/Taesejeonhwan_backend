@@ -11,7 +11,7 @@ public class FeedResponseGetGenre {
 
     public static FeedResponseGetGenre from(Genre genre) {
         return FeedResponseGetGenre.builder()
-                .genre_name(genre.getGenre_name()) // Genre 엔티티 필드명에 맞추기
+                .genre_name(genre.getGenreName()) // Genre 엔티티 필드명에 맞추기
                 .build();
     }
 }

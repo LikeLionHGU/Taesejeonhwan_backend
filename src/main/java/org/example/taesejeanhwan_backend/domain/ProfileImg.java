@@ -12,12 +12,14 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Table(name="profileImg")
+@Table(name="profile_img")
 public class ProfileImg {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "img_id")
     private Long id;
 
+    @Column(name = "img_url")
     private String imgUrl;
 
     @OneToMany(mappedBy = "profileImg")
