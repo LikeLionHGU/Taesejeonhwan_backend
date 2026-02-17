@@ -49,13 +49,13 @@ public class WishService {
     }
 
     public List<FeedResponseGetWish> getWishList(Long user_id) {
-        if (user_id == null) {
-            throw new IllegalArgumentException("user_id cannot be null");
-        }
-        User user = userRepository.findById(user_id).orElseThrow(()->new RuntimeException("User not found"));
-        List<Long> contentIds = userWishRepository.findContent_idByUser(user);
-        List<Content> contents = contentRepository.findAllById(contentIds);
-        return contents.stream()
+
+        User user = userRepository.findById(user_id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return userWishRepository.findByUser(user)
+                .stream()
+                .map(UserWish::getContent)   // 여기 정상 작동
                 .map(FeedResponseGetWish::from)
                 .toList();
     }

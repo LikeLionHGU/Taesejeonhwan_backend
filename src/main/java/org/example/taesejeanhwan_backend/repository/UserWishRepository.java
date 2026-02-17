@@ -6,6 +6,7 @@ import org.example.taesejeanhwan_backend.domain.UserWish;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,12 +14,11 @@ import java.util.Optional;
 public interface UserWishRepository extends JpaRepository<UserWish, Long> {
     boolean existsByContentAndUser(Content content, User user);
 
-    List<Long> findContent_idByUser(User user);
-
     boolean existsByUserAndContent(User user, Content content);
 
     Optional<UserWish> findByContentAndUser(Content content, User user);
 
 
+    List<UserWish> findByUser(User user);
 }
 

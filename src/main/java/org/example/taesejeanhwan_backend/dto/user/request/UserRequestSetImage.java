@@ -6,6 +6,6 @@ import lombok.Getter;
 @Data
 @Getter
 public class UserRequestSetImage {
-    private Long userId;
+    private Long user_id;
     private String profile_img;
 }

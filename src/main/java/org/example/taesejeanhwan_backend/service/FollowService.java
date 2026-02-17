@@ -20,23 +20,34 @@ public class FollowService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
 
-    public UserResponseResult follow(UserRequestFollow userRequestFollow) {
-        if (userRequestFollow.getFollow_id() == null || userRequestFollow.getUser_id() == null) {
+    public UserResponseResult follow(UserRequestFollow request) {
+
+        if (request.getFollow_id() == null || request.getUser_id() == null) {
             throw new IllegalArgumentException("Invalid request parameter");
         }
-        Follow follow = followRepository.findByUser_id(userRequestFollow.getUser_id());
-        User user = userRepository.findById(userRequestFollow.getFollow_id()).orElseThrow(()->new RuntimeException("User not found"));
-        follow.builder()
-                .anotherUser(user)
-                .build();
-        followRepository.save(follow);
-        if(followRepository.existsByAnotherUser(follow.getAnotherUser())) {
+
+        User me = userRepository.findById(request.getUser_id())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        User target = userRepository.findById(request.getFollow_id())
+                .orElseThrow(() -> new RuntimeException("Target user not found"));
+
+        // 이미 팔로우했는지 체크
+        if (followRepository.existsByUserAndAnotherUser(me, target)) {
             return UserResponseResult.builder()
-                    .result("success")
+                    .result("fail")
                     .build();
         }
+
+        Follow follow = Follow.builder()
+                .user(me)
+                .anotherUser(target)
+                .build();
+
+        followRepository.save(follow);
+
         return UserResponseResult.builder()
-                .result("fail")
+                .result("success")
                 .build();
     }
 
@@ -59,22 +70,28 @@ public class FollowService {
                 .map(UserResponseFollowList::following)
                 .toList();
     }
+    public UserResponseResult deleteFollow(UserRequestFollow request) {
 
-    public UserResponseResult deleteFollow(UserRequestFollow userRequestFollow) {
-        if (userRequestFollow.getFollow_id() == null||userRequestFollow.getUser_id() == null) {
+        if (request.getFollow_id() == null || request.getUser_id() == null) {
             throw new IllegalArgumentException("Ids cannot be null");
         }
 
-        if(userRequestFollow.getFollow_id().equals(userRequestFollow.getUser_id())) {
-            throw new RuntimeException("You can't delete yourself");
+        if (request.getFollow_id().equals(request.getUser_id())) {
+            throw new IllegalArgumentException("You can't unfollow yourself");
         }
-        Follow follow = followRepository.findByUser_idAndAnotherUser_Id(userRequestFollow.getUser_id(), userRequestFollow.getFollow_id());
+
+        Follow follow = followRepository
+                .findByUser_idAndAnotherUser_Id(
+                        request.getUser_id(),
+                        request.getFollow_id()
+                );
+
+        if (follow == null) {
+            throw new RuntimeException("Follow not found");
+        }
+
         followRepository.delete(follow);
-        if (followRepository.existsByUser_idAndAnotherUser_Id(userRequestFollow.getUser_id(), userRequestFollow.getFollow_id())) {
-            return UserResponseResult.builder()
-                    .result("fail")
-                    .build();
-        }
+
         return UserResponseResult.builder()
                 .result("success")
                 .build();
