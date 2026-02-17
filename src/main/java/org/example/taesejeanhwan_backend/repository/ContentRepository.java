@@ -8,5 +8,6 @@ public interface ContentRepository extends JpaRepository<Content, Long> {
 
 
     Content findByContentId(Long contentId);
+
 }
 
