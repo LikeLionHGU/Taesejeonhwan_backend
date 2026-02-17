@@ -1,10 +1,7 @@
 package org.example.taesejeanhwan_backend.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 
@@ -14,6 +11,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @Table(name = "reviews")
+@Setter
+
 public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

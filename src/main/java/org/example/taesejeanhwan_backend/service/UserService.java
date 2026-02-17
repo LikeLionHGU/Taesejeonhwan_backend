@@ -4,6 +4,8 @@ import org.example.taesejeanhwan_backend.domain.*;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseSearchContent;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseSearchContentResult;
 import org.example.taesejeanhwan_backend.dto.user.GenreStatDto;
+import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestUpdateGenre;
+import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseResult;
 import org.example.taesejeanhwan_backend.dto.user.request.*;
 import org.example.taesejeanhwan_backend.dto.user.response.*;
 import org.example.taesejeanhwan_backend.repository.*;
@@ -254,4 +256,35 @@ public class UserService {
                 .results(users)
                 .build();
     }
+
+    public FeedResponseResult updateKeyword(Long userId, FeedRequestUpdateGenre req) {
+        try {
+            List<UserGenre> userGenres = userGenreRepository.findByUser_Id(userId);
+
+            UserGenre target = userGenres.stream()
+                    .filter(ug -> ug.getGenre().getGenre_name().equals(req.getGenre_name()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (target == null) {
+                return FeedResponseResult.builder().result("fail").build();
+            }
+
+            Genre newGenre = genreRepository.findByGenre_name(req.getChanged_genre());
+            if (newGenre == null) {
+                return FeedResponseResult.builder().result("fail").build();
+            }
+
+            target.setGenre(newGenre);
+
+            userGenreRepository.save(target);
+
+            return FeedResponseResult.builder().result("success").build();
+
+        } catch (Exception e) {
+            return FeedResponseResult.builder().result("fail").build();
+        }
+    }
+
+
 }

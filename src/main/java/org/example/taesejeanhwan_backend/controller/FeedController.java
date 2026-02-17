@@ -18,6 +18,7 @@ public class FeedController {
     public final UserService userService;
     public final WishService wishService;
     public final ContentService contentService;
+    public final UserContentService userContentService;
 
     //리뷰추가
     @PostMapping("/reviews")
@@ -49,7 +50,7 @@ public class FeedController {
         return reviewService.getAllReviews(content_id);
     }
 
-    //준혁
+    //준혁 (영화관 피드 목록 조회)(끝)
     @GetMapping("/{user_id}/contents")
     public List<FeedResponseGetUserContent> getUserContents(@PathVariable Long user_id) {
         return userContentService.getUserContents(user_id);
@@ -73,31 +74,33 @@ public class FeedController {
         return userService.searchUser(keyword);
     }
 
-    //준혁
+    //준혁(모든 장르 불러오기)(끝)
     @GetMapping("/genre")
     public List<FeedResponseGetGenre> getAllGenres() {
 
         return contentService.getAllGenres();
     }
 
-    //준혁
+    //준혁(리뷰 수정하기)(끝)
     @PutMapping("/reviews")
     public FeedResponseReviewUpdate updateReview(@RequestBody FeedRequestReviewUpdate feedRequestReviewUpdate) {
         return reviewService.updateReview(feedRequestReviewUpdate);
     }
 
-    //준혁
-    @PutMapping("/genre")
-    public FeedResponseResult updateKeyword(@RequestBody FeedRequestUpdateGenre feedRequestUpdateGenre) {
-        return userService.updateKeyword(feedRequestUpdateGenre);
+    //준혁(장르 수정하기)(끝)
+    @PutMapping("/{user_id}/genre")
+    public FeedResponseResult updateKeyword(
+            @PathVariable Long user_id,
+            @RequestBody FeedRequestUpdateGenre req
+    ) {
+        return userService.updateKeyword(user_id, req);
     }
 
-    //준혁
+
+    //준혁(찜하기 제거)(끝)
     @DeleteMapping("/wish")
     public FeedResponseResult deleteWish(@RequestBody FeedRequestDeleteWish feedRequestDeleteWish) {
         return wishService.deleteWish(feedRequestDeleteWish);
     }
-
-
 
 }

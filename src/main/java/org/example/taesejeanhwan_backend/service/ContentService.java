@@ -4,8 +4,13 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.domain.*;
 import org.example.taesejeanhwan_backend.dto.feed.response.*;
+import org.example.taesejeanhwan_backend.domain.Content;
+import org.example.taesejeanhwan_backend.domain.Genre;
+import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseGetGenre;
 import org.example.taesejeanhwan_backend.dto.user.response.UserResponseContent;
 import org.example.taesejeanhwan_backend.repository.*;
+import org.example.taesejeanhwan_backend.repository.ContentRepository;
+import org.example.taesejeanhwan_backend.repository.GenreRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,6 +29,7 @@ public class ContentService {
     private final UserContentRepository userContentRepository;
     private final UserGenreRepository userGenreRepository;
     private final ReviewRepository reviewRepository;
+    private final GenreRepository genreRepository;
 
     public List<UserResponseContent> getContentsForSelection() {
         List<Content> contents = contentRepository.findAll();
@@ -190,6 +196,13 @@ public class ContentService {
                         .toList())
                 .build();
 
+    }
+
+    public List<FeedResponseGetGenre> getAllGenres() {
+        List<Genre> genres = genreRepository.findAll();
+        return genres.stream()
+                .map(FeedResponseGetGenre::from)
+                .toList();
     }
 
 

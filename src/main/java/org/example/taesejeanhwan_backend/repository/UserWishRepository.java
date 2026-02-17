@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserWishRepository extends JpaRepository<UserWish, Long> {
@@ -15,4 +16,9 @@ public interface UserWishRepository extends JpaRepository<UserWish, Long> {
     List<Long> findContent_idByUser(User user);
 
     boolean existsByUserAndContent(User user, Content content);
+
+    Optional<UserWish> findByContentAndUser(Content content, User user);
+
+
 }
+
