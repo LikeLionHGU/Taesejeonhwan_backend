@@ -22,8 +22,6 @@ public class Genre{
     @Column(name="genre_name")
     private String genre_name;
 
-    private Long tmdb_id;
-
     @OneToMany(mappedBy = "genre", fetch=FetchType.LAZY,
             cascade=CascadeType.ALL,
             orphanRemoval = true)
