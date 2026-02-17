@@ -66,7 +66,7 @@ public class WishService {
             return FeedResponseResult.builder().result("fail").build();
         }
 
-        Content content = contentRepository.findByContentId(req.getContent_id());
+        Content content = contentRepository.findById(req.getContent_id()).orElseThrow(()->new RuntimeException("Content not found"));
         if (content == null) {
             return FeedResponseResult.builder().result("fail").build();
         }

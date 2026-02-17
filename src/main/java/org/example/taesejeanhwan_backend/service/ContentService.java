@@ -58,7 +58,7 @@ public class ContentService {
             // 내 장르 가져오기
             List<UserGenre> myGenres = userGenreRepository.findByUser_Id(userId);
             Set<String> myGenreNames = myGenres.stream()
-                    .map(g -> g.getGenre().getGenre_name())
+                    .map(g -> g.getGenre().getGenreName())
                     .collect(Collectors.toSet());
 
             // 전체 유저 가져오기 (나 제외)
@@ -72,7 +72,7 @@ public class ContentService {
                 List<UserGenre> otherGenres =
                         userGenreRepository.findByUser_Id(user.getId());
                 Set<String> otherGenreNames = otherGenres.stream()
-                        .map(g -> g.getGenre().getGenre_name())
+                        .map(g -> g.getGenre().getGenreName())
                         .collect(Collectors.toSet());
 
                 Set<String> intersection = new HashSet<>(myGenreNames);
@@ -114,7 +114,7 @@ public class ContentService {
 
                 List<String> genreNames = userGenreRepository.findByUser_Id(user.getId())
                         .stream()
-                        .map(g -> g.getGenre().getGenre_name())
+                        .map(g -> g.getGenre().getGenreName())
                         .toList();
 
                 List<UserContent> userContents = userContentRepository.findAllByUser(user);
