@@ -20,5 +20,7 @@ public interface UserWishRepository extends JpaRepository<UserWish, Long> {
 
 
     List<UserWish> findByUser(User user);
+
+    void deleteByUserId(Long userId);
 }
 

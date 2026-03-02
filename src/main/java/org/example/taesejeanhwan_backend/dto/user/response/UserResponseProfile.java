@@ -13,4 +13,7 @@ public class UserResponseProfile {
     private String profile_img;
     private UserResponseProfileDataFollow stats;
     private List<UserResponseProfileGenre> table;
+    private Long user_id;
+    private Boolean is_following;
+
 }

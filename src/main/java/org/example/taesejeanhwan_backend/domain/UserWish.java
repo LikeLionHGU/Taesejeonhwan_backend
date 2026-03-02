@@ -12,7 +12,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "userWishes")
+@Table(
+        name = "user_wishes",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_user_wish_user_content",
+                        columnNames = {"user_id", "content_id"}
+                )
+        }
+)
 public class UserWish {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

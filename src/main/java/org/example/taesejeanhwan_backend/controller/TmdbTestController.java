@@ -22,7 +22,7 @@ import org.springframework.web.client.RestTemplate;
 
 
 @RestController
-@RequestMapping("/api/tv")
+@RequestMapping("/api/movie")
 @RequiredArgsConstructor
 public class TmdbTestController {
 
@@ -52,7 +52,7 @@ public class TmdbTestController {
 
         while (saved < count) {
             String url = baseUrl
-                    + "/tv/popular"
+                    + "/movie/popular"
                     + "?api_key=" + apiKey
                     + "&language=ko-KR"
                     + "&page=" + page;
@@ -67,10 +67,10 @@ public class TmdbTestController {
             for (JsonNode m : results) {
                 if (saved >= count) break;
 
-                String title = m.path("name").asText(null);
+                String title = m.path("title").asText(null);
                 String overview = m.path("overview").asText(null);
 
-                String releaseDate = m.path("first_air_date").asText("");
+                String releaseDate = m.path("release_date").asText("");
                 int year = 0;
                 if (releaseDate.length() >= 4) {
                     year = Integer.parseInt(releaseDate.substring(0, 4));

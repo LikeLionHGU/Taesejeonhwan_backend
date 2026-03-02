@@ -10,6 +10,7 @@ public class FeedResponseSearchContentResult {
     private Long content_id;
     private String title;
     private String poster;
+    private String overview;
     private int year;
 
     public static FeedResponseSearchContentResult from(Content content) {
@@ -18,6 +19,7 @@ public class FeedResponseSearchContentResult {
                 .title(content.getTitle())
                 .poster(content.getPoster())
                 .year(content.getYear())
+                .overview(content.getOverview())
                 .build();
     }
 }

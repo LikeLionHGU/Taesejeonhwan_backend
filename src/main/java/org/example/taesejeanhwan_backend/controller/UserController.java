@@ -1,5 +1,6 @@
 package org.example.taesejeanhwan_backend.controller;
 
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.dto.user.request.*;
 import org.example.taesejeanhwan_backend.dto.user.response.*;
@@ -33,7 +34,9 @@ public class UserController {
 
     //유저 취향 table 생성
     @PostMapping("/onboarding")
-    public UserResponseResult setPreference(@RequestBody UserRequestSetPreference userRequestSetPreference) {
+    public UserResponseTop5Genre setPreference(
+            @RequestBody UserRequestSetPreference userRequestSetPreference
+    ) {
         return userService.setPreference(userRequestSetPreference);
     }
 
@@ -60,11 +63,12 @@ public class UserController {
     public List<UserResponseProfileImage> getAllProfileImages() {
         return userService.getAllProfileImages();
     }
-
     //프로필 조회
     @GetMapping("/profile/{user_id}")
-    public UserResponseProfile getProfile(@PathVariable Long user_id) {
-        return userService.getProfile(user_id);
+    public UserResponseProfile getProfile(@PathVariable Long user_id,
+                                          HttpSession session) {
+        Long loginUserId = (Long) session.getAttribute("LOGIN_USER_ID");
+        return userService.getProfile(loginUserId, user_id);
     }
 
     //팔로워 리스트
@@ -84,6 +88,5 @@ public class UserController {
     public UserResponseResult deleteFollow(@RequestBody UserRequestFollow userRequestFollow) {
         return followService.deleteFollow(userRequestFollow);
     }
-
 
 }

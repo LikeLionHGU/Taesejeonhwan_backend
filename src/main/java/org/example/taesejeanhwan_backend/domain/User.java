@@ -20,9 +20,17 @@ public class User {
     private Long id;
 
     @Pattern(regexp = "^@?[a-zA-Z0-9]+$")
-    @Size(min = 2, max = 8)
+    @Size(min = 2, max = 9)
     @Column(length = 10, nullable = true)
     private String nickname;
+
+    @PrePersist
+    @PreUpdate
+    private void formatNickname() {
+        if (this.nickname != null && !this.nickname.startsWith("@")) {
+            this.nickname = "@" + this.nickname;
+        }
+    }
 
     @Column(nullable = false, length = 50)
     private String googleSub;
