@@ -12,5 +12,6 @@ public class FeedResponseUserAndContentGetUser {
     private String nickname;
     private String profile_img;
     private List<String> genre_keyword;
+    private Boolean is_following;
     private List<FeedResponseUserAndContentGetContent> content;
 }

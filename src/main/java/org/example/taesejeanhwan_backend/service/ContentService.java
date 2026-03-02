@@ -4,19 +4,11 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.domain.*;
 import org.example.taesejeanhwan_backend.dto.feed.response.*;
-import org.example.taesejeanhwan_backend.domain.Content;
-import org.example.taesejeanhwan_backend.domain.Genre;
-import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseGetGenre;
 import org.example.taesejeanhwan_backend.dto.user.response.UserResponseContent;
 import org.example.taesejeanhwan_backend.repository.*;
-import org.example.taesejeanhwan_backend.repository.ContentRepository;
-import org.example.taesejeanhwan_backend.repository.GenreRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,67 +22,71 @@ public class ContentService {
     private final UserGenreRepository userGenreRepository;
     private final ReviewRepository reviewRepository;
     private final GenreRepository genreRepository;
+    private final FollowRepository followRepository;
 
     public List<UserResponseContent> getContentsForSelection() {
         List<Content> contents = contentRepository.findAll();
         return contents.stream()
                 .map(UserResponseContent::from)
-                .limit(100)
+                .limit(400)
                 .toList();
     }
 
-    public FeedResponseUserAndContent getUserAndContent(String mode, Long userId, int page) {
+    /**
+     * @param mode "similar" or "diff"
+     * @param loginUserId 로그인한 사용자 id (me)
+     * @param targetUserId 컨트롤러에서 넘어오지만, 현재 로직은 "나 기준 추천"이라 필수로 쓰진 않음
+     * @param page 페이지 (0부터)
+     */
+    public FeedResponseUserAndContent getUserAndContent(String mode,
+                                                        Long loginUserId,
+                                                        int page) {
 
         try {
-            int pageSize = 20;
+            int pageSize = 50;
 
             if (mode == null || (!mode.equals("similar") && !mode.equals("diff"))) {
                 throw new IllegalArgumentException("Invalid mode");
+            }
+
+            if (loginUserId == null) {
+                throw new IllegalArgumentException("loginUserId cannot be null");
             }
 
             if (page < 0) {
                 throw new IllegalArgumentException("Page cannot be negative");
             }
 
-            User me = userRepository.findById(userId)
+            // ✅ 나(me)
+            User me = userRepository.findById(loginUserId)
                     .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-            // 내 장르 가져오기
-            List<UserGenre> myGenres = userGenreRepository.findByUser_Id(userId);
-            Set<String> myGenreNames = myGenres.stream()
-                    .map(g -> g.getGenre().getGenreName())
+            // ✅ 내 장르 id 집합
+            Set<Long> myGenreIds = userGenreRepository.findByUser_Id(loginUserId).stream()
+                    .map(ug -> ug.getGenre().getId())
                     .collect(Collectors.toSet());
 
             // 전체 유저 가져오기 (나 제외)
             List<User> allUsers = userRepository.findAll().stream()
-                    .filter(u -> !u.getId().equals(userId))
+                    .filter(u -> !u.getId().equals(loginUserId))
                     .toList();
 
             // 조건에 맞는 유저 필터링
             List<User> filteredUsers = new ArrayList<>();
+
             for (User user : allUsers) {
-                List<UserGenre> otherGenres =
-                        userGenreRepository.findByUser_Id(user.getId());
-                Set<String> otherGenreNames = otherGenres.stream()
-                        .map(g -> g.getGenre().getGenreName())
+                Set<Long> otherGenreIds = userGenreRepository.findByUser_Id(user.getId()).stream()
+                        .map(ug -> ug.getGenre().getId())
                         .collect(Collectors.toSet());
 
-                Set<String> intersection = new HashSet<>(myGenreNames);
-                intersection.retainAll(otherGenreNames);
+                Set<Long> intersection = new HashSet<>(myGenreIds);
+                intersection.retainAll(otherGenreIds);
 
                 int overlapCount = intersection.size();
 
-                boolean match;
+                boolean match = mode.equals("similar") ? overlapCount >= 3 : overlapCount <= 1;
 
-                if (mode.equals("similar")) {
-                    match = overlapCount >= 4;
-                } else { // diff
-                    match = overlapCount <= 1;
-                }
-
-                if (match) {
-                    filteredUsers.add(user);
-                }
+                if (match) filteredUsers.add(user);
             }
 
             // 페이지 계산
@@ -105,6 +101,7 @@ public class ContentService {
                         .feeds(List.of())
                         .build();
             }
+
             List<User> pageUsers = filteredUsers.subList(start, end);
 
             // DTO 변환
@@ -114,10 +111,12 @@ public class ContentService {
 
                 List<String> genreNames = userGenreRepository.findByUser_Id(user.getId())
                         .stream()
-                        .map(g -> g.getGenre().getGenreName())
+                        .map(g -> g.getGenre().getGenreName().trim().toLowerCase())
                         .toList();
 
                 List<UserContent> userContents = userContentRepository.findAllByUser(user);
+
+                // ✅ 이 메서드 아래에 추가되어 있음
                 List<Content> contents = selectFiveContents(userContents, user);
 
                 List<FeedResponseUserAndContentGetContent> contentDtos =
@@ -130,19 +129,25 @@ public class ContentService {
                                         .build())
                                 .toList();
 
+                // ✅ 내가 이 유저를 팔로우 중인지
+                boolean isFollowing = followRepository.existsByUserAndAnotherUser(me, user);
+
                 feeds.add(
                         FeedResponseUserAndContentGetUser.builder()
                                 .user_id(user.getId())
                                 .nickname(user.getNickname())
                                 .profile_img(
-                                        user.getProfileImg() != null ?
-                                                user.getProfileImg().getImgUrl() : null
+                                        user.getProfileImg() != null
+                                                ? user.getProfileImg().getImgUrl()
+                                                : null
                                 )
+                                .is_following(isFollowing) // ✅ DTO에 필드 필요!
                                 .genre_keyword(genreNames)
                                 .content(contentDtos)
                                 .build()
                 );
             }
+
             boolean hasNext = end < filteredUsers.size();
 
             return FeedResponseUserAndContent.builder()
@@ -162,13 +167,17 @@ public class ContentService {
         }
     }
 
+    // ✅ 반드시 ContentService 클래스 안에 있어야 함
     public List<Content> selectFiveContents(List<UserContent> userContents, User user) {
+
         List<Content> contents = userContents.stream()
                 .map(UserContent::getContent)
                 .toList();
 
         if (contents.isEmpty()) return List.of();
 
+        // ✅ ReviewRepository에 이 메서드가 있어야 함:
+        // List<Review> findTop5ByUserAndContentInOrderByRatingDescCreateTimeDesc(User user, List<Content> contents);
         List<Review> topReviews =
                 reviewRepository.findTop5ByUserAndContentInOrderByRatingDescCreateTimeDesc(user, contents);
 
@@ -180,7 +189,7 @@ public class ContentService {
     }
 
     public FeedResponseSearchContent searchContent(String keyword) {
-        if(keyword == null || keyword.isEmpty()) {
+        if (keyword == null || keyword.isEmpty()) {
             throw new IllegalArgumentException("Invalid keyword");
         }
         List<Content> contents = contentRepository.findAllByTitleContaining(keyword);
@@ -195,7 +204,6 @@ public class ContentService {
                         .map(FeedResponseSearchContentResult::from)
                         .toList())
                 .build();
-
     }
 
     public List<FeedResponseGetGenre> getAllGenres() {
@@ -204,6 +212,4 @@ public class ContentService {
                 .map(FeedResponseGetGenre::from)
                 .toList();
     }
-
-
 }

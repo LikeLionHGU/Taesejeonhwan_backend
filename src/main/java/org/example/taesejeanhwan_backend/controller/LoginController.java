@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -46,6 +47,13 @@ public class LoginController {
     @PostMapping("/logout")
     public ResponseEntity<LogoutResponse> logout(HttpSession session) {
         session.invalidate(); // 세션 자체 폐기
+        return ResponseEntity.ok(new LogoutResponse("SUCCESS"));
+    }
+    @DeleteMapping("/users/{userId}")
+    public ResponseEntity<LogoutResponse> deleteUserById(
+            @PathVariable Long userId
+    ) {
+        loginService.deleteUserCascade(userId);
         return ResponseEntity.ok(new LogoutResponse("SUCCESS"));
     }
 }

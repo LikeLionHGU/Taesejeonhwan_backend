@@ -1,11 +1,12 @@
 package org.example.taesejeanhwan_backend.controller;
 
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.dto.feed.response.*;
 import org.example.taesejeanhwan_backend.dto.feed.request.*;
+import org.example.taesejeanhwan_backend.dto.user.request.UserRequestUpdateTop5Genre;
 import org.example.taesejeanhwan_backend.dto.user.response.UserResponseSearchUser;
+import org.example.taesejeanhwan_backend.dto.user.response.UserResponseTop5Genre;
 import org.example.taesejeanhwan_backend.service.*;
 import org.springframework.web.bind.annotation.*;
 
@@ -60,7 +61,12 @@ public class FeedController {
 
     //mode에 따른 유저와 콘텐츠 보기
     @GetMapping("/{mode}/{user_id}")
-    public FeedResponseUserAndContent getUserAndContent(@PathVariable String mode, @PathVariable Long user_id, @RequestParam("page") int page) {
+    public FeedResponseUserAndContent getUserAndContent(@PathVariable String mode,
+                                                        @PathVariable Long user_id,
+                                                        @RequestParam("page") int page,
+                                                        HttpSession session) {
+
+        Long loginUserId = (Long) session.getAttribute("LOGIN_USER_ID");
         return contentService.getUserAndContent(mode, user_id, page);
     }
 
@@ -89,13 +95,19 @@ public class FeedController {
         return reviewService.updateReview(feedRequestReviewUpdate);
     }
 
+    //유저 장르 불러오기
+    @GetMapping("/{user_id}/genre")
+    public UserResponseTop5Genre getTop5Genres(@PathVariable Long user_id) {
+        return userService.getTop5Genre(user_id);
+    }
+
     //준혁(장르 수정하기)(끝)
     @PutMapping("/{user_id}/genre")
-    public FeedResponseResult updateKeyword(
-            @PathVariable Long user_id,
-            @RequestBody FeedRequestUpdateGenre req
+    public UserResponseTop5Genre updateTop5Genre(
+            @PathVariable("user_id") Long userId,
+            @RequestBody UserRequestUpdateTop5Genre req
     ) {
-        return userService.updateKeyword(user_id, req);
+        return userService.updateTop5Genre(userId, req);
     }
 
 

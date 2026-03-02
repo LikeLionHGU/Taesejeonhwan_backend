@@ -4,10 +4,10 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.taesejeanhwan_backend.domain.*;
 import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestAddReview;
+import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestReviewUpdate;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseGetContent;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseGetReview;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseResult;
-import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestReviewUpdate;
 import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseReviewUpdate;
 import org.example.taesejeanhwan_backend.repository.*;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-
 
 @Service
 @RequiredArgsConstructor
@@ -27,16 +26,18 @@ public class ReviewService {
     private final ContentGenreRepository contentGenreRepository;
     private final UserGenreRepository userGenreRepository;
     private final ReviewRepository reviewRepository;
-    private final GenreRepository genreRepository;
     private final UserWishRepository userWishRepository;
+    private final UserContentRepository userContentRepository;
 
     public FeedResponseReviewUpdate updateReview(FeedRequestReviewUpdate req) {
 
-        // 1) 유저/콘텐츠 찾기 (너 서비스에서 이미 쓰던 방식 그대로)
-        User user = userRepository.findById(req.getUser_id()).orElseThrow(()->new RuntimeException("User Not Found"));
+        // 1) 유저/콘텐츠 찾기
+        User user = userRepository.findById(req.getUser_id())
+                .orElseThrow(() -> new RuntimeException("User Not Found"));
         if (user == null) throw new RuntimeException("User not found");
 
-        Content content = contentRepository.findById(req.getContent_id()).orElseThrow(()->new RuntimeException("Content Not Found"));
+        Content content = contentRepository.findById(req.getContent_id())
+                .orElseThrow(() -> new RuntimeException("Content Not Found"));
         if (content == null) throw new RuntimeException("Content not found");
 
         // 2) 해당 유저가 해당 콘텐츠에 남긴 리뷰 찾기
@@ -78,15 +79,10 @@ public class ReviewService {
             User reviewUser = userRepository.findById(feedRequestAddReview.getUser_id())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // 리뷰 추가 전 장르 순위 계산
             List<Review> beforeReviews = reviewRepository.findByUser(reviewUser);
             List<Genre> beforeTop5 = calculateTopGenres(beforeReviews);
+            if (beforeTop5 == null) beforeTop5 = new ArrayList<>();
 
-            if (beforeTop5 == null) {
-                beforeTop5 = new ArrayList<>();
-            }
-
-            // 기존 UserGenre와 비교해서 안 겹치는 것 백업
             List<UserGenre> existingUserGenres = userGenreRepository.findByUser(reviewUser);
 
             Set<Genre> backupGenres = new HashSet<>();
@@ -96,27 +92,41 @@ public class ReviewService {
                 }
             }
 
-            // 신규 리뷰 저장
-            Review review = Review.builder()
-                    .comment(feedRequestAddReview.getComment())
-                    .rating(feedRequestAddReview.getRating())
-                    .user(reviewUser)
-                    .content(reviewContent)
-                    .createTime(LocalDate.now())
-                    .build();
+            Review review = reviewRepository.findByContentAndUser(reviewContent, reviewUser);
+
+            if (review == null) {
+                review = Review.builder()
+                        .user(reviewUser)
+                        .content(reviewContent)
+                        .createTime(LocalDate.now())
+                        .build();
+            }
+
+            // 최신 값으로 덮어쓰기 (리뷰 수정 포함)
+            review.setComment(feedRequestAddReview.getComment());
+            review.setRating(feedRequestAddReview.getRating());
+
             reviewRepository.save(review);
+
+            // ✅ 추가 기능: 내 영화관에 없으면 추가
+            UserContent uc = userContentRepository.findByUserAndContent(reviewUser, reviewContent)
+                    .orElse(null);
+
+            if (uc == null) {
+                UserContent newUserContent = UserContent.builder()
+                        .user(reviewUser)
+                        .content(reviewContent)
+                        .build();
+                userContentRepository.save(newUserContent);
+            }
 
             // 리뷰 포함 후 다시 계산
             List<Review> afterReviews = reviewRepository.findByUser(reviewUser);
             List<Genre> afterTop = calculateTopGenres(afterReviews);
-
-            if (afterTop == null) {
-                afterTop = new ArrayList<>();
-            }
+            if (afterTop == null) afterTop = new ArrayList<>();
 
             // 백업 장르 포함해서 최종 5개 구성
             List<Genre> finalTop5 = new ArrayList<>();
-
             int limit = Math.max(0, 5 - backupGenres.size());
 
             for (Genre g : afterTop) {
@@ -147,7 +157,7 @@ public class ReviewService {
                     .build();
 
         } catch (Exception e) {
-
+            e.printStackTrace();
             return FeedResponseResult.builder()
                     .result("error")
                     .build();
@@ -168,7 +178,6 @@ public class ReviewService {
         }
 
         List<Genre> genreList = new ArrayList<>(countMap.keySet());
-        //많이 겹치는 순, 평균 평점 높은 순, 장르 아이디 작은 순으로 정렬
         genreList.sort(
                 Comparator
                         .comparing((Genre g) -> countMap.get(g)).reversed()
@@ -179,6 +188,11 @@ public class ReviewService {
         return genreList.stream().limit(5).toList();
     }
 
+    /**
+     * ✅ 방법 A-2 적용:
+     * 리뷰가 없으면 예외를 던지지 않고, content 정보는 그대로 내려주되
+     * rating/comment/create_time 같은 리뷰 관련 필드는 null(또는 기본값)로 내려준다.
+     */
     public FeedResponseGetContent getContentReview(Long user_id, Long content_id) {
 
         if (user_id == null || content_id == null) {
@@ -191,31 +205,43 @@ public class ReviewService {
         Content content = contentRepository.findById(content_id)
                 .orElseThrow(() -> new RuntimeException("Content not found"));
 
+        // 리뷰가 없을 수도 있으니 null 허용
         Review review = reviewRepository.findByContentAndUser(content, user);
 
-        if (review == null) {
-            throw new RuntimeException("Review not found");
-        }
-
+        // 콘텐츠 장르는 리뷰 유무와 관계없이 반환 가능
         List<String> genreNames = contentGenreRepository.findByContent(content)
                 .stream()
                 .map(ContentGenre::getGenre)
                 .map(Genre::getGenreName)
                 .toList();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String formattedDate = review.getCreateTime().format(formatter);
+        // 리뷰가 없으면 리뷰 관련 필드는 비워서 내려준다
+        // ⚠️ FeedResponseGetContent의 rating 타입이 primitive(float/int)이면 null 대신 0f/0을 넣어야 함
+        Float rating = null;
+        String comment = null;
+        String formattedDate = null;
+
+        if (review != null) {
+            // review.getRating() 타입이 Float이면 그대로, primitive면 캐스팅 맞춰줘
+            rating = review.getRating();
+            comment = review.getComment();
+
+            if (review.getCreateTime() != null) {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                formattedDate = review.getCreateTime().format(formatter);
+            }
+        }
 
         return FeedResponseGetContent.builder()
                 .title(content.getTitle())
                 .poster(content.getPoster())
                 .overview(content.getOverview())
-                .rating(review.getRating())
+                .rating(rating)          // 리뷰 없으면 null (primitive면 0으로 바꿔)
                 .year(content.getYear())
-                .comment(review.getComment())
+                .comment(comment)        // 리뷰 없으면 null
                 .wished(userWishRepository.existsByUserAndContent(user, content))
                 .genre_name(genreNames)
-                .create_time(formattedDate)
+                .create_time(formattedDate) // 리뷰 없으면 null
                 .build();
     }
 
@@ -223,7 +249,9 @@ public class ReviewService {
         if (content_id == null) {
             throw new IllegalArgumentException("Invalid request parameter");
         }
-        Content content = contentRepository.findById(content_id).orElseThrow(()->new RuntimeException("Content not found"));
+        Content content = contentRepository.findById(content_id)
+                .orElseThrow(() -> new RuntimeException("Content not found"));
+
         List<Review> reviews = reviewRepository.findByContent(content);
         return reviews.stream()
                 .map(FeedResponseGetReview::from)

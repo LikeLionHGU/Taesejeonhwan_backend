@@ -40,7 +40,8 @@ public class UserContentService {
         Map<Long, Float> ratingMap = reviews.stream()
                 .collect(Collectors.toMap(
                         r -> r.getContent().getId(),
-                        Review::getRating
+                        Review::getRating,
+                        (oldVal, newVal) -> newVal  // 중복이면 마지막 값 사용
                 ));
 
         return userContents.stream()

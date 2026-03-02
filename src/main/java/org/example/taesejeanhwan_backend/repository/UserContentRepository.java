@@ -6,6 +6,8 @@ import org.example.taesejeanhwan_backend.domain.UserContent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.EntityGraph;
+import java.util.Optional;
+import org.example.taesejeanhwan_backend.domain.Content;
 
 import java.util.List;
 
@@ -17,4 +19,9 @@ public interface UserContentRepository extends JpaRepository<UserContent, Long> 
 
     @EntityGraph(attributePaths = "content")
     List<UserContent> findByUserId(Long userId);
+
+    void deleteByUserId(Long userId);
+
+    Optional<UserContent> findByUserAndContent(User user, Content content);
+
 }

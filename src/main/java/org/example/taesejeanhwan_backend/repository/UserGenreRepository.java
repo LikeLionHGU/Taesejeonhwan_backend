@@ -16,4 +16,6 @@ public interface UserGenreRepository extends JpaRepository<UserGenre, Long> {
     List<UserGenre> findByUser(User reviewUser);
 
     void deleteByUser(User reviewUser);
+
+    void deleteByUserId(Long userId);
 }

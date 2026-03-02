@@ -1,11 +1,9 @@
 package org.example.taesejeanhwan_backend.service;
 
 import org.example.taesejeanhwan_backend.domain.*;
-import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseSearchContent;
-import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseSearchContentResult;
+import org.example.taesejeanhwan_backend.dto.user.response.UserResponseTop5Genre;
+import org.example.taesejeanhwan_backend.dto.user.request.UserRequestUpdateTop5Genre;
 import org.example.taesejeanhwan_backend.dto.user.GenreStatDto;
-import org.example.taesejeanhwan_backend.dto.feed.request.FeedRequestUpdateGenre;
-import org.example.taesejeanhwan_backend.dto.feed.response.FeedResponseResult;
 import org.example.taesejeanhwan_backend.dto.user.request.*;
 import org.example.taesejeanhwan_backend.dto.user.response.*;
 import org.example.taesejeanhwan_backend.repository.*;
@@ -13,7 +11,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -69,30 +67,33 @@ public class UserService {
                 .build();
     }
 
-    public UserResponseResult setPreference(UserRequestSetPreference userRequestSetPreference) {
+
+
+    public UserResponseTop5Genre setPreference(UserRequestSetPreference userRequestSetPreference) {
         try {
-            //content_id와 rating map하기
+            // content_id와 rating map하기
             Map<Long, Float> ratingMap = userRequestSetPreference.getUser_contents()
                     .stream()
                     .collect(Collectors.toMap(
                             UserRequestSetPreferenceContent::getContent_id,
                             UserRequestSetPreferenceContent::getRating
                     ));
-            //content_id모음
+
             List<Long> contentIds = new ArrayList<>(ratingMap.keySet());
             LocalDate localDate = LocalDate.now();
 
             User reviewUser = userRepository.findById(userRequestSetPreference.getUser_id())
                     .orElseThrow(() -> new RuntimeException("User not found"));
+
             List<Content> contents = contentRepository.findAllById(contentIds);
             Map<Long, Content> contentMap = contents.stream()
                     .collect(Collectors.toMap(Content::getId, c -> c));
 
-            for (int i = 0; i < contentIds.size(); i++) {
-                Long contentId = contentIds.get(i);
+            // 리뷰 저장
+            for (Long contentId : contentIds) {
                 Float contentRating = ratingMap.get(contentId);
-
                 Content content = contentMap.get(contentId);
+
                 reviewRepository.save(
                         Review.builder()
                                 .rating(contentRating)
@@ -109,11 +110,11 @@ public class UserService {
                                 .content(content)
                                 .build()
                 );
-
             }
-            //content_id로 해당하는 ContentGenre 리스트업
+
+            // 장르 통계 계산
             List<ContentGenre> contentGenres = contentGenreRepository.findAllByContent_IdIn(contentIds);
-            //genre_id와 장릐의 통계(횟수, 별점, 최소 content_id) 매핑하기
+
             Map<Long, GenreStatDto> genreStatMap = new HashMap<>();
             for (ContentGenre cg : contentGenres) {
                 Long genreId = cg.getGenre().getId();
@@ -132,7 +133,7 @@ public class UserService {
                 );
             }
 
-            //상위 5개 장르 리스트업
+            // 상위 5개 장르 계산
             List<GenreStatDto> top5Genres = genreStatMap.values().stream()
                     .sorted(
                             Comparator
@@ -142,9 +143,10 @@ public class UserService {
                     )
                     .limit(5)
                     .toList();
+
+            // DB에 top5 저장
             userGenreRepository.deleteByUser_Id(userRequestSetPreference.getUser_id());
 
-            //UserGenre 만들기 및 저장
             List<UserGenre> userGenres = top5Genres.stream()
                     .map(stat -> UserGenre.builder()
                             .user(userRepository.getReferenceById(userRequestSetPreference.getUser_id()))
@@ -152,15 +154,29 @@ public class UserService {
                             .build()
                     )
                     .toList();
+
             userGenreRepository.saveAll(userGenres);
 
-            return UserResponseResult.builder()
+
+            List<UserResponseTop5Genre.TopGenreDto> responseTop5 = top5Genres.stream()
+                    .map(stat -> {
+                        Genre g = genreRepository.getReferenceById(stat.getGenreId());
+                        return UserResponseTop5Genre.TopGenreDto.builder()
+                                .genre_id(g.getId())
+                                .genre_name(g.getGenreName())
+                                .build();
+                    })
+                    .toList();
+
+            return UserResponseTop5Genre.builder()
                     .result("success")
+                    .top5_genres(responseTop5)
                     .build();
 
         } catch (Exception e) {
-            return UserResponseResult.builder()
+            return UserResponseTop5Genre.builder()
                     .result("fail")
+                    .top5_genres(Collections.emptyList())
                     .build();
         }
     }
@@ -186,24 +202,40 @@ public class UserService {
                 .toList();
     }
 
-    public UserResponseProfile getProfile(Long user_id) {
-        if (user_id == null) {
+    public UserResponseProfile getProfile(Long loginUserId, Long targetUserId) {
+        if (targetUserId == null) {
             throw new IllegalArgumentException("user_id cannot be null");
         }
+
         try {
-            User user = userRepository.findById(user_id).orElseThrow(() -> new RuntimeException("User not found"));
+            User target = userRepository.findById(targetUserId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-            int followerCount = followRepository.findAllByAnotherUser_Id(user_id).size();
-            int followingCount = followRepository.findAllByUser_id(user_id).size();
+            int followerCount = followRepository.findAllByAnotherUser_Id(targetUserId).size();
+            int followingCount = followRepository.findAllByUser_id(targetUserId).size();
 
-            List<UserResponseProfileGenre> table = userGenreRepository.findByUser_Id(user_id).stream()
+            List<UserResponseProfileGenre> table = userGenreRepository.findByUser_Id(targetUserId).stream()
                     .map(UserResponseProfileGenre::from)
                     .toList();
 
+            // ✅ is_following 계산
+            boolean isFollowing = false;
+            if (loginUserId != null && !loginUserId.equals(targetUserId)) {
+                User me = userRepository.findById(loginUserId)
+                        .orElseThrow(() -> new RuntimeException("Login user not found"));
+
+                isFollowing = followRepository.existsByUserAndAnotherUser(me, target);
+            }
+
+            // ✅ profile_img null-safe
+            String profileImgUrl = (target.getProfileImg() != null) ? target.getProfileImg().getImgUrl() : null;
+
             return UserResponseProfile.builder()
                     .result("success")
-                    .nickname(user.getNickname())
-                    .profile_img(user.getProfileImg().getImgUrl())
+                    .user_id(target.getId())          // ✅ 포함
+                    .is_following(isFollowing)        // ✅ 포함
+                    .nickname(target.getNickname())
+                    .profile_img(profileImgUrl)
                     .stats(UserResponseProfileDataFollow.builder()
                             .follower_count(followerCount)
                             .following_count(followingCount)
@@ -211,6 +243,7 @@ public class UserService {
                     )
                     .table(table)
                     .build();
+
         } catch (Exception e) {
             return UserResponseProfile.builder()
                     .result("fail")
@@ -249,33 +282,100 @@ public class UserService {
                 .results(results)
                 .build();
     }
-
-    public FeedResponseResult updateKeyword(Long userId, FeedRequestUpdateGenre req) {
+    public UserResponseTop5Genre getTop5Genre(Long userId) {
         try {
+            if (userId == null) throw new IllegalArgumentException("user_id cannot be null");
+
             List<UserGenre> userGenres = userGenreRepository.findByUser_Id(userId);
 
-            UserGenre target = userGenres.stream()
-                    .filter(ug -> ug.getGenre().getGenreName().equals(req.getGenre_name()))
-                    .findFirst()
-                    .orElse(null);
+            List<UserResponseTop5Genre.TopGenreDto> top5 = userGenres.stream()
+                    .map(ug -> UserResponseTop5Genre.TopGenreDto.builder()
+                            .genre_id(ug.getGenre().getId())
+                            .genre_name(ug.getGenre().getGenreName())
+                            .build())
+                    .toList();
 
-            if (target == null) {
-                return FeedResponseResult.builder().result("fail").build();
+            return UserResponseTop5Genre.builder()
+                    .result("success")
+                    .top5_genres(top5)
+                    .build();
+        } catch (Exception e) {
+            return UserResponseTop5Genre.builder()
+                    .result("fail")
+                    .top5_genres(Collections.emptyList())
+                    .build();
+        }
+    }
+
+
+    public UserResponseTop5Genre updateTop5Genre(Long userId, UserRequestUpdateTop5Genre req) {
+        try {
+            if (userId == null) {
+                throw new IllegalArgumentException("user_id cannot be null");
+            }
+            if (req == null || req.getGenre_name() == null) {
+                throw new IllegalArgumentException("genre_names cannot be null");
+            }
+            if (req.getGenre_name().size() != 5) {
+                throw new IllegalArgumentException("genre_names must have exactly 5 items");
             }
 
-            Genre newGenre = genreRepository.findByGenreName(req.getChanged_genre());
-            if (newGenre == null) {
-                return FeedResponseResult.builder().result("fail").build();
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // 1) 장르명 trim + 유효성 + 중복 체크
+            List<String> names = req.getGenre_name().stream()
+                    .map(s -> s == null ? "" : s.trim())
+                    .toList();
+
+            if (names.stream().anyMatch(String::isBlank)) {
+                throw new IllegalArgumentException("genre_names must not contain blank items");
             }
 
-            target.setGenre(newGenre);
+            Set<String> dedup = new HashSet<>(names);
+            if (dedup.size() != 5) {
+                throw new IllegalArgumentException("genre_names must not contain duplicates");
+            }
 
-            userGenreRepository.save(target);
+            List<Genre> genres = names.stream()
+                    .map(name -> {
+                        Genre g = genreRepository.findByGenreName(name);
+                        if (g == null) throw new RuntimeException("Genre not found: " + name);
+                        return g;
+                    })
+                    .toList();
 
-            return FeedResponseResult.builder().result("success").build();
+            // 2) 기존 top5 삭제 후 새로 저장
+            userGenreRepository.deleteByUser_Id(user.getId());
+
+            List<UserGenre> userGenres = genres.stream()
+                    .map(g -> UserGenre.builder()
+                            .user(user)
+                            .genre(g)
+                            .build())
+                    .toList();
+
+            userGenreRepository.saveAll(userGenres);
+
+            // 3) 응답 구성
+            List<UserResponseTop5Genre.TopGenreDto> top5 = genres.stream()
+                    .map(g -> UserResponseTop5Genre.TopGenreDto.builder()
+                            .genre_id(g.getId())
+                            .genre_name(g.getGenreName())
+                            .build())
+                    .toList();
+
+            return UserResponseTop5Genre.builder()
+                    .result("success")
+                    .top5_genres(top5)
+                    .build();
 
         } catch (Exception e) {
-            return FeedResponseResult.builder().result("fail").build();
+            e.printStackTrace(); // 디버깅용(필수)
+            return UserResponseTop5Genre.builder()
+                    .result("fail")
+                    .top5_genres(Collections.emptyList())
+                    .build();
         }
     }
 

@@ -8,12 +8,14 @@ import org.example.taesejeanhwan_backend.domain.Review;
 @Builder
 public class FeedResponseGetReview {
     private Long user_id;
+    private String nickname;
     private String comment;
     private Float rating;
 
     public static FeedResponseGetReview from(Review review) {
         return FeedResponseGetReview.builder()
                 .user_id(review.getUser().getId())
+                .nickname(review.getUser().getNickname())
                 .comment(review.getComment())
                 .rating(review.getRating())
                 .build();
