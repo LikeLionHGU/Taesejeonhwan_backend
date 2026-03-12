@@ -1,35 +1,102 @@
-🔛 Otte- 취향 유사도를 통한 다각적 ott 작품 탐색 소셜 플랫폼 (Backend) ⚡
+# 🎬 Otte  
+### 취향 유사도를 통한 다각적 OTT 작품 탐색 소셜 플랫폼 (Backend)
+
+> **Otte**는 넘쳐나는 콘텐츠 속에서 방황하는 시청자들을 위해  
+> **사용자의 취향 데이터를 기반으로 OTT 작품을 탐색하고 발견하도록 돕는 소셜 큐레이션 플랫폼**입니다.
+
+단순한 평점 추천을 넘어,  
+사용자의 **취향 유사도**를 기반으로 콘텐츠를 탐색하며  
+
+- 🎯 **안정적인 재미**
+- 🌱 **새로운 발견**
+
+을 모두 경험할 수 있도록 설계되었습니다.
 
 ---
 
-🔛 서비스 소개
-Otte는 넘쳐나는 콘텐츠 속에서 방황하는 시청자들을 위한 유저 취향 기반 OTT 큐레이션 서비스입니다. 
-단순한 평점 나열을 넘어, ‘안정적인 재미’ 와 ‘새로운 발견’을 오가는 스위치 모드를 통해 인생작을 만나는 시간을 선물합니다.
+# 📌 Overview
+
+오늘날 OTT 서비스에는 수많은 콘텐츠가 존재합니다.  
+하지만 많은 사용자는 다음과 같은 문제를 겪습니다.
+
+- 무엇을 볼지 결정하기 어렵다
+- 추천 알고리즘이 항상 정확하지 않다
+- 새로운 작품을 발견하기 어렵다
+
+**Otte는 이러한 문제를 해결하기 위해**
+
+👉 **유저 취향 기반 탐색 시스템**  
+👉 **취향 유사도 기반 소셜 추천**
+
+을 제공합니다.
 
 ---
 
-✨ 주요 기능
-🔄스위치 모드: 유저의 기분에 따라 선택할 수 있는 두 가지 모드(비슷한 취향과 반대 취향) 탐색을 제공한다.
-👍유저 중심 추천: 작품 포스터가 아닌, 취향이 검증된 유저의 프로필과 리뷰 리스트를 전면에 배치한다.
+# ✨ 주요 기능
+
+## 🔄 Switch Mode
+
+사용자의 상황과 기분에 따라 **두 가지 탐색 모드**를 제공합니다.
+
+| Mode | 설명 |
+|-----|-----|
+| **Similar Mode** | 나와 취향이 비슷한 유저의 작품 추천 |
+| **Different Mode** | 나와 취향이 다른 유저의 작품 추천 |
+
+이를 통해
+
+- ✔ 안정적인 추천  
+- ✔ 새로운 콘텐츠 발견  
+
+두 가지 경험을 모두 제공합니다.
 
 ---
 
-🛠️ 기술 스택
-Framework: Spring Boot 3.5.4
-Language: Java 17+
-Database: MySQL
-Storage: AWS S3
-Auth: JWT, CSRF 토큰
+## 👥 User-centered Recommendation
+
+기존 OTT 서비스와 달리 **작품 중심이 아닌 유저 중심 UI**를 제공합니다.
+
+기존 방식
+작품 → 평점 → 추천
+
+Otte 방식
+취향이 비슷한 유저 → 그 유저의 리뷰 → 작품 발견
+
+
+즉,  
+**신뢰할 수 있는 취향을 가진 유저를 통해 콘텐츠를 발견합니다.**
 
 ---
 
-🚀 시작하기
-1) 프로젝트 클론
+# 🛠 Tech Stack
+
+### Backend
+- Spring Boot 3.5.4
+- Java 17+
+
+### Database
+- MySQL
+
+### Storage
+- AWS S3
+
+### Authentication
+- JWT
+- CSRF Token
+
+### Infrastructure
+- AWS
+
+---
+
+# 🚀 Getting Started
+
+## 1️⃣ Clone Repository
+
+```bash
 git clone https://github.com/LikeLionHGU/Taesejeonhwan_backend.git
 cd Taesejeonhwan_backend
 
-
-2) 환경 설정 (application.properties)
 # Server
 server.port=8443
 
@@ -39,13 +106,11 @@ spring.datasource.username=Otte
 spring.datasource.password=secret(^^b)
 spring.jpa.hibernate.ddl-auto=update
 
-# S3
+# AWS S3
 s3.bucket=fish-back
 s3.region=ap-northeast-2
 s3.access-key=****
 s3.secret-key=****
 
-3) 빌드 및 실행
 ./gradlew build
-java -jar Taesejeanhwan_backend-0.0.1-SNAPSHOT.jar
-﻿
+run = java -jar build/libs/Taesejeanhwan_backend-0.0.1-SNAPSHOT.jar
