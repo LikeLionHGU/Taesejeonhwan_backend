@@ -89,7 +89,7 @@ Otte 방식
 
 ---
 
-# 🚀 Getting Started
+# 🚀 시작하기
 
 ## 1️⃣ Clone Repository
 
